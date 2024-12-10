@@ -1,6 +1,7 @@
 import { RequestHandler } from 'express-serve-static-core'
 import { PublicUserType } from '../../types/PublicUserType'
 import { DefaultRouterResolver } from '../DefaultRouterResolver'
+import { Business } from '../../business/Business'
 
 export const UserMeRequest: RequestHandler<
     string,
@@ -10,12 +11,10 @@ export const UserMeRequest: RequestHandler<
     {
         token?: string
     }
-> = (req: any, res) => {
-    DefaultRouterResolver(res, () => {
-        return {
-            ...req.currentUser,
-            password: undefined,
-            id: undefined,
-        }
+> = async (req: any, res) => {
+    await DefaultRouterResolver(res, async () => {
+        return Business.user.parseUser({
+            user: req.currentUser,
+        })
     })
 }

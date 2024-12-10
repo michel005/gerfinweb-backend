@@ -3,11 +3,11 @@ import { UserType } from '../../types/UserType'
 import { DefaultRouterResolver } from '../DefaultRouterResolver'
 import { Business } from '../../business/Business'
 
-export const UserCreateRequest: RequestHandler<string, UserType> = (
+export const UserCreateRequest: RequestHandler<string, UserType> = async (
     req,
     res
 ) => {
-    DefaultRouterResolver(res, () => {
-        Business.user.create({ user: req.body })
+    await DefaultRouterResolver(res, async () => {
+        await Business.user.create({ user: req.body })
     })
 }

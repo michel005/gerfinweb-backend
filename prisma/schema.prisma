@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://michel:michel@01@localhost:3306/gerfinweb"
+}
+
+model user {
+  id              String          @id @db.Char(36)
+  full_name       String          @db.VarChar(45)
+  email           String          @db.VarChar(45)
+  phone           String          @db.VarChar(45)
+  person_type     String          @db.VarChar(2)
+  document_type   String          @db.VarChar(10)
+  document_number String          @db.VarChar(45)
+  password        String          @db.VarChar(45)
+  birthday        DateTime        @db.Date
+  address_id      String          @db.Char(36)
+  setting_id      String          @db.Char(36)
+  address         address         @relation(fields: [address_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_address")
+  user_setting    user_setting    @relation(fields: [setting_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_setting")
+  user_recovery   user_recovery[]
+  user_token      user_token[]
+
+  @@index([email], map: "user_email")
+  @@index([id], map: "user_id")
+  @@index([address_id], map: "user_address_idx")
+  @@index([setting_id], map: "user_setting_idx")
+}
+
+model user_recovery {
+  id            String @id @db.Char(36)
+  recovery_code String @db.Char(36)
+  status        String @db.VarChar(20)
+  user_id       String @db.Char(36)
+  user          user   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_recovery_user")
+
+  @@index([recovery_code, user_id], map: "user_recovery_recovery_code")
+  @@index([user_id], map: "user_recovery_user")
+}
+
+model user_token {
+  id              String   @id @db.Char(36)
+  token           String   @db.Char(36)
+  expiration_date DateTime @db.DateTime(0)
+  user_id         String   @db.Char(36)
+  user            user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_token_user")
+
+  @@index([token, user_id], map: "user_token_token")
+  @@index([user_id], map: "user_token_user_idx")
+}
+
+model address {
+  id            String  @id @db.Char(36)
+  zip_code      String  @db.VarChar(45)
+  street_name   String  @db.VarChar(45)
+  street_number String  @db.VarChar(45)
+  complement    String? @db.VarChar(45)
+  neighborhood  String  @db.VarChar(45)
+  city          String  @db.VarChar(45)
+  state         String  @db.VarChar(45)
+  country       String  @db.VarChar(45)
+  user          user[]
+}
+
+model user_setting {
+  id           String @id @db.Char(36)
+  color_schema String @db.VarChar(45)
+  user         user[]
+}

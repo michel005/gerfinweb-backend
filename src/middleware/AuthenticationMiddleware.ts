@@ -3,6 +3,7 @@ import { SessionUtils } from '../utils/SessionUtils'
 import { ErrorCollection } from '../types/ErrorCollection'
 import { DefaultRouterResolver } from '../routes/DefaultRouterResolver'
 import { Business } from '../business/Business'
+import { Database } from '../database/Database'
 
 const publicRoutes = [
     ['GET', '/api/ping'],
@@ -13,14 +14,14 @@ const publicRoutes = [
     ['GET', '/api/user/recovery/changePassword'],
 ]
 
-export const AuthenticationMiddleware = (
+export const AuthenticationMiddleware = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
-    DefaultRouterResolver(
+    await DefaultRouterResolver(
         res,
-        () => {
+        async () => {
             if (
                 publicRoutes.find(
                     (x) => x[0] === req.method && x[1] === req.path
@@ -30,17 +31,23 @@ export const AuthenticationMiddleware = (
             } else {
                 const token = SessionUtils.tokenByRequest(req)
 
-                if (token) {
-                    const userId = Business.userToken.validateToken({ token })
-                    if (userId) {
-                        req.currentUser = Business.user.database.find(
-                            (x) => x.id == userId
-                        )[0]
+                const user = await Database.prismaClient.user.findFirst({
+                    select: Business.user.select,
+                    where: {
+                        user_token: {
+                            some: {
+                                token,
+                            },
+                        },
+                    },
+                })
 
-                        if (req.currentUser) {
-                            next()
-                            return
-                        }
+                if (token && !!user) {
+                    req.currentUser = user
+
+                    if (req.currentUser) {
+                        next()
+                        return
                     }
                 }
 

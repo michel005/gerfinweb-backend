@@ -9,10 +9,10 @@ export const UserLoginRequest: RequestHandler<
         token: string
     },
     LoginType
-> = (req, res) => {
-    DefaultRouterResolver(res, () => {
+> = async (req, res) => {
+    await DefaultRouterResolver(res, async () => {
         return {
-            token: Business.user.login(req.body),
+            token: await Business.user.login(req.body),
         }
     })
 }

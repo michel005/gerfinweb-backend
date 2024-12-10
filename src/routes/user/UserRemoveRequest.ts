@@ -8,9 +8,9 @@ export const UserRemoveRequest: RequestHandler<
     {
         password?: string
     }
-> = (req, res) => {
-    DefaultRouterResolver(res, () => {
-        Business.user.remove({
+> = async (req, res) => {
+    await DefaultRouterResolver(res, async () => {
+        await Business.user.remove({
             currentUser: req.currentUser,
             password: req.body?.password,
         })
