@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gerfinweb-backend
+    ports:
+      - '8080:8080'
+    environment:
+      - MONGODB_URI=mongodb://admin:123@gerfinweb-mongo:27017/gerfinweb?authSource=admin
+    depends_on:
+      - gerfinweb-mongo
+    networks:
+      - local
+
+  gerfinweb-mongo:
+    image: mongo
+    container_name: gerfinweb-mongodb
+    restart: always
+    ports:
+      - '27017:27017'
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=123
+      - MONGO_INITDB_DATABASE=gerfinweb
+    volumes:
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - mongo_data:/data/db
+    networks:
+      - local
+
+volumes:
+  mongo_data: {}
+
+networks:
+  local:
+    driver: bridge
