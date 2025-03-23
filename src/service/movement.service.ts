@@ -2,8 +2,10 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { Movement } from '../schema/movement.schema'
+import { ArrayUtils } from '../utils/array.utils'
 import { DateUtils } from '../utils/date.utils'
 import { ErrorCollection } from '../utils/ErrorUtils'
+import { MyDate } from '../utils/MyDate'
 import { AbstractService } from './abstract.service'
 
 @Injectable()
@@ -85,26 +87,129 @@ export class MovementService extends AbstractService<Movement> {
         return 'PENDENT'
     }
 
+    async dailyAmount(
+        userId: string,
+        month: number,
+        year: number
+    ): Promise<{
+        current: { day: number; amount?: number }[]
+        future: { day: number; amount?: number }[]
+    }> {
+        const movementList = await this.findAll(
+            userId,
+            month.toString(),
+            year.toString()
+        )
+        const before = await this.amount(
+            userId,
+            (month === 1 ? 12 : month - 1).toString(),
+            (month === 1 ? year - 1 : year).toString()
+        )
+
+        const currentDays: {
+            day: number
+            amount?: number
+        }[] = []
+        const futureDays: {
+            day: number
+            amount?: number
+        }[] = []
+        const amount = movementList.filter((x) => x.type === 'MOVEMENT')
+        for (const day of new Array(DateUtils.lastDay(month, year))
+            .fill(null)
+            .map((_, x) => x + 1)) {
+            if (new MyDate(day, month, year).compare(new MyDate()) < 0) {
+                currentDays.push({
+                    day,
+                    amount:
+                        ArrayUtils.sum(
+                            amount.filter(
+                                (x) =>
+                                    MyDate.fromString(x.dueDate || '').compare(
+                                        new MyDate(day, month, year)
+                                    ) <= 0
+                            ),
+                            'value'
+                        ) + before.current,
+                })
+                futureDays.push({
+                    day,
+                })
+            } else if (
+                new MyDate(day, month, year).compare(new MyDate()) === 0
+            ) {
+                currentDays.push({
+                    day,
+                    amount:
+                        ArrayUtils.sum(
+                            amount.filter(
+                                (x) =>
+                                    MyDate.fromString(x.dueDate || '').compare(
+                                        new MyDate(day, month, year)
+                                    ) <= 0
+                            ),
+                            'value'
+                        ) + before.current,
+                })
+                futureDays.push({
+                    day,
+                    amount:
+                        ArrayUtils.sum(
+                            amount.filter(
+                                (x) =>
+                                    MyDate.fromString(
+                                        x.dueDate || x.date || ''
+                                    ).compare(new MyDate(day, month, year)) <= 0
+                            ),
+                            'value'
+                        ) + before.future,
+                })
+            } else {
+                futureDays.push({
+                    day,
+                    amount:
+                        ArrayUtils.sum(
+                            amount.filter(
+                                (x) =>
+                                    MyDate.fromString(
+                                        x.dueDate || x.date || ''
+                                    ).compare(new MyDate(day, month, year)) <= 0
+                            ),
+                            'value'
+                        ) + before.future,
+                })
+            }
+        }
+
+        return {
+            current: currentDays,
+            future: futureDays,
+        }
+    }
+
     async findAll(
         userId: string,
         month: string,
-        year: string,
-        search: string
+        year: string
     ): Promise<Movement[]> {
         const filter = {
             user: userId,
             $or: [
-                { description: { $regex: search, $options: 'i' } },
-                { date: { $regex: search, $options: 'i' } },
-                { dueDate: { $regex: search, $options: 'i' } },
+                {
+                    date: {
+                        $regex: new RegExp(
+                            `^\\d{2}/${month.padStart(2, '0')}/${year}$`
+                        ),
+                    },
+                },
+                {
+                    dueDate: {
+                        $regex: new RegExp(
+                            `^\\d{2}/${month.padStart(2, '0')}/${year}$`
+                        ),
+                    },
+                },
             ],
-        }
-        if (month && year) {
-            filter['date'] = {
-                $regex: new RegExp(
-                    `^\\d{2}/${month.padStart(2, '0')}/${year}$`
-                ),
-            }
         }
         return (
             await this.movementModel

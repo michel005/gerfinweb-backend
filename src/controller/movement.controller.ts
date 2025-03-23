@@ -66,15 +66,9 @@ export class MovementController {
     findAll(
         @Request() req: CustomRequest,
         @Query('month') month: string,
-        @Query('year') year: string,
-        @Query('search') search: string
+        @Query('year') year: string
     ) {
-        return this.movementService.findAll(
-            req.user._id,
-            month,
-            year,
-            search || ''
-        )
+        return this.movementService.findAll(req.user._id, month, year)
     }
 
     @Get('/amount')
@@ -94,18 +88,13 @@ export class MovementController {
         @Query('month') month: string,
         @Query('year') year: string
     ) {
-        const todaysMonth = new Date().getMonth() + 1
-        const todaysYear = new Date().getFullYear()
         const numberMonth = parseInt(month)
         const numberYear = parseInt(year)
-        const todayCompareNumber = todaysYear * 12 + todaysMonth
-        const paramCompareNumber = numberYear * 12 + numberMonth
 
         const movementList = await this.movementService.findAll(
             req.user._id,
             month,
-            year,
-            ''
+            year
         )
 
         const before = await this.movementService.amount(

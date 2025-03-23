@@ -50,6 +50,12 @@ export class UserController {
         return this.userService.login(body.email, body.password)
     }
 
+    @Post('/clear')
+    @UseGuards(AuthGuard)
+    clear(@Request() req: CustomRequest, @Body() body: { password: string }) {
+        return this.userService.clear(req.user._id, body.password)
+    }
+
     @Post('/changePassword')
     @UseGuards(AuthGuard)
     changePassword(

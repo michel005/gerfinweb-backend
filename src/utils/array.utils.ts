@@ -19,4 +19,8 @@ export class ArrayUtils {
 
         return array
     }
+
+    static sum = (array: any[], field: string) => {
+        return array.reduce((x, y) => x + y?.[field] || 0, 0)
+    }
 }

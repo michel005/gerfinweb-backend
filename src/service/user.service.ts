@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { CreateUserDto } from '../dto/create-user.dto'
+import { Account } from '../schema/account.schema'
+import { Movement } from '../schema/movement.schema'
 import { User } from '../schema/user.schema'
 import { ErrorCollection } from '../utils/ErrorUtils'
 import { AbstractService } from './abstract.service'
@@ -11,6 +13,8 @@ import { TokenService } from './token.service'
 export class UserService extends AbstractService<User> {
     constructor(
         @InjectModel(User.name) private userModel: Model<User>,
+        @InjectModel(Account.name) private accountModel: Model<Account>,
+        @InjectModel(Movement.name) private movementModel: Model<Movement>,
         private tokenService: TokenService
     ) {
         super(userModel)
@@ -79,6 +83,32 @@ export class UserService extends AbstractService<User> {
         return {
             token: token.token,
         }
+    }
+
+    async clear(userId: string, password: string): Promise<void> {
+        const errors = new ErrorCollection()
+        errors.add('password', 'USER-003', !password || password === '')
+        errors.throw()
+
+        const response = await this.userModel.find({
+            _id: userId,
+            password,
+        })
+
+        errors.add('password', 'USER-004', !response?.[0])
+        errors.throw()
+
+        await this.movementModel
+            .deleteMany({
+                user: userId,
+            })
+            .exec()
+
+        await this.accountModel
+            .deleteMany({
+                user: userId,
+            })
+            .exec()
     }
 
     async chanePassword(

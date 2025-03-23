@@ -38,6 +38,7 @@ export class TemplateController {
             day: body.day,
             description: body.description,
             destinyAccount: body.destinyAccount,
+            recurrence: body.recurrence,
             value: body.value,
         })
     }
