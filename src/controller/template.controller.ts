@@ -74,17 +74,12 @@ export class TemplateController {
         return this.templateService.toMovement(req.user._id, id, month, year)
     }
 
-    @Get('/findAllWithMovementCount')
+    @Get('/findAllByYear')
     @UseGuards(AuthGuard)
     findAllWithMovementCount(
         @Request() req: CustomRequest,
-        @Query('month') month: string,
         @Query('year') year: string
     ) {
-        return this.templateService.findAllWithMovementCount(
-            req.user._id,
-            month,
-            year
-        )
+        return this.templateService.findAllByYear(req.user._id, year)
     }
 }

@@ -12,7 +12,10 @@ export class User extends AbstractEntityDto {
     picture: string
 
     @Prop({ required: true })
-    full_name: string
+    fullName: string
+
+    @Prop()
+    biography: string
 
     @Prop({ required: true, unique: true })
     email: string

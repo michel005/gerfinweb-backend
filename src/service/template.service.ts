@@ -6,12 +6,14 @@ import { Template } from '../schema/template.schema'
 import { DateUtils } from '../utils/date.utils'
 import { ErrorCollection } from '../utils/ErrorUtils'
 import { AbstractService } from './abstract.service'
+import { MovementService } from './movement.service'
 
 @Injectable()
 export class TemplateService extends AbstractService<Template> {
     constructor(
         @InjectModel(Template.name) private templateModel: Model<Template>,
-        @InjectModel(Movement.name) private movementModel: Model<Movement>
+        @InjectModel(Movement.name) private movementModel: Model<Movement>,
+        private readonly movementService: MovementService
     ) {
         super(templateModel)
     }
@@ -104,5 +106,39 @@ export class TemplateService extends AbstractService<Template> {
                 return { ...template.toObject(), movementCount: count }
             })
         )
+    }
+
+    async findAllByYear(userId: string, year: string) {
+        const templates = await this.templateModel
+            .find({
+                user: userId,
+            })
+            .populate('destinyAccountDetails')
+            .exec()
+
+        const allTemplates: any[] = []
+        for (const template of templates) {
+            const allMonths: Record<number, Movement[]> = {}
+            for (let month = 1; month <= 12; month++) {
+                allMonths[month] = await this.movementService.findAllByTemplate(
+                    userId,
+                    template._id,
+                    month.toString(),
+                    year.toString()
+                )
+            }
+            allTemplates.push({ template: template.toObject(), allMonths })
+        }
+
+        const allMonths: Record<number, Movement[]> = {}
+        for (let month = 1; month <= 12; month++) {
+            allMonths[month] = await this.movementService.findAllWithNoTemplate(
+                userId,
+                month.toString(),
+                year.toString()
+            )
+        }
+        allTemplates.push({ template: { description: '' }, allMonths })
+        return allTemplates
     }
 }

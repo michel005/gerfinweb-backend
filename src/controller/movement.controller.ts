@@ -9,15 +9,10 @@ import {
     Request,
     UseGuards,
 } from '@nestjs/common'
-import { CreateUserDto } from '../dto/create-user.dto'
-import { AuthGuard, CustomRequest } from '../guards/AuthGuard'
-import { Account } from '../schema/account.schema'
-import { Movement } from '../schema/movement.schema'
-import { User } from '../schema/user.schema'
-import { AccountService } from '../service/account.service'
-import { MovementService } from '../service/movement.service'
-import { UserService } from '../service/user.service'
 import { TemplateService } from 'src/service/template.service'
+import { AuthGuard, CustomRequest } from '../guards/AuthGuard'
+import { Movement } from '../schema/movement.schema'
+import { MovementService } from '../service/movement.service'
 
 @Controller('movements')
 export class MovementController {

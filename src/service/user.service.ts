@@ -23,9 +23,9 @@ export class UserService extends AbstractService<User> {
     validateCreate(user: any) {
         const errors = new ErrorCollection()
         errors.add(
-            'full_name',
+            'fullName',
             'VALIDATE-001',
-            !user.full_name || user.full_name === ''
+            !user.fullName || user.fullName === ''
         )
         errors.add('email', 'VALIDATE-001', !user.email || user.email === '')
         errors.add(
@@ -34,25 +34,25 @@ export class UserService extends AbstractService<User> {
             !user.password || user.password === ''
         )
         errors.add(
-            'password_confirm',
+            'passwordConfirmation',
             'VALIDATE-001',
-            !user.password_confirm || user.password_confirm === ''
+            !user.passwordConfirmation || user.passwordConfirmation === ''
         )
         errors.add(
-            'password_confirm',
+            'passwordConfirmation',
             'USER-002',
-            user.password !== user.password_confirm
+            user.password !== user.passwordConfirmation
         )
-        errors.add('error', 'USER-001', !user.accept_terms)
+        errors.add('error', 'USER-001', !user.acceptTerms)
         errors.throw()
     }
 
     validateUpdate(user: any) {
         const errors = new ErrorCollection()
         errors.add(
-            'full_name',
+            'fullName',
             'VALIDATE-001',
-            !user.full_name || user.full_name === ''
+            !user.fullName || user.fullName === ''
         )
         errors.throw()
     }

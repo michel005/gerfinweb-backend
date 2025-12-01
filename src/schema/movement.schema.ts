@@ -3,7 +3,16 @@ import { Document } from 'mongoose'
 import { v4 as uuidv4 } from 'uuid'
 import { AbstractEntityDto } from '../dto/abstractEntity.dto'
 
-@Schema()
+@Schema({
+    toJSON: {
+        virtuals: true,
+        transform: (doc, ret) => {
+            delete ret.id
+            delete ret.__v
+            return ret
+        },
+    },
+})
 export class Movement extends AbstractEntityDto {
     @Prop({ default: uuidv4 })
     _id: string

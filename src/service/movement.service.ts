@@ -219,6 +219,87 @@ export class MovementService extends AbstractService<Movement> {
                 .populate('templateDetails')
                 .exec()
         ).map((x) => {
+            console.log({ x })
+            x.status = this.status(x)
+            return x
+        })
+    }
+
+    async findAllByTemplate(
+        userId: string,
+        templateId: string,
+        month: string,
+        year: string
+    ): Promise<Movement[]> {
+        const filter = {
+            user: userId,
+            template: templateId,
+            $or: [
+                {
+                    date: {
+                        $regex: new RegExp(
+                            `^\\d{2}/${month.padStart(2, '0')}/${year}$`
+                        ),
+                    },
+                },
+                {
+                    dueDate: {
+                        $regex: new RegExp(
+                            `^\\d{2}/${month.padStart(2, '0')}/${year}$`
+                        ),
+                    },
+                },
+            ],
+        }
+        return (
+            await this.movementModel
+                .find(filter)
+                .populate('originAccountDetails')
+                .populate('destinyAccountDetails')
+                .populate('templateDetails')
+                .exec()
+        ).map((x) => {
+            console.log({ x })
+
+            x.status = this.status(x)
+            return x
+        })
+    }
+
+    async findAllWithNoTemplate(
+        userId: string,
+        month: string,
+        year: string
+    ): Promise<Movement[]> {
+        const filter = {
+            user: userId,
+            template: { $exists: false },
+            $or: [
+                {
+                    date: {
+                        $regex: new RegExp(
+                            `^\\d{2}/${month.padStart(2, '0')}/${year}$`
+                        ),
+                    },
+                },
+                {
+                    dueDate: {
+                        $regex: new RegExp(
+                            `^\\d{2}/${month.padStart(2, '0')}/${year}$`
+                        ),
+                    },
+                },
+            ],
+        }
+        return (
+            await this.movementModel
+                .find(filter)
+                .populate('originAccountDetails')
+                .populate('destinyAccountDetails')
+                .populate('templateDetails')
+                .exec()
+        ).map((x) => {
+            console.log({ x })
             x.status = this.status(x)
             return x
         })

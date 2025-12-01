@@ -26,7 +26,7 @@ export class UserController {
     @UseGuards(AuthGuard)
     update(@Request() req: CustomRequest, @Body() body: User) {
         return this.userService.update(req.user._id, {
-            full_name: body.full_name,
+            fullName: body.fullName,
             birthday: body.birthday,
             picture: body.picture,
             colorSchema: body.colorSchema,
