@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { BankAccount } from 'src/entity/BankAccount'
+import { BankAccount } from '@/entity/BankAccount'
 import { Repository } from 'typeorm'
 import { CreateBankAccountDTO, GetAllBankAccountDTO, ResponseBankAccountDTO, ResponseBankAccountListDTO } from './dto'
+import { UpdateBankAccountDTO } from './dto/UpdateBankAccountDTO'
 
 @Injectable()
 export class BankAccountService {
@@ -20,6 +21,42 @@ export class BankAccountService {
         await temp.beforeInsert()
         const response = await this.bankAccountRepository.save(temp)
         return response.toDTO()
+    }
+
+    async update(userId: string, id: string, bankAccount: UpdateBankAccountDTO): Promise<ResponseBankAccountDTO> {
+        const existingBankAccount = await this.bankAccountRepository.findOne({
+            where: {
+                id: id,
+                user: {
+                    id: userId,
+                },
+            },
+        })
+        if (!existingBankAccount) {
+            throw new BadRequestException('Conta bancária não encontrada')
+        }
+        existingBankAccount.name = bankAccount.name
+        existingBankAccount.type = bankAccount.type
+        if (bankAccount.color !== undefined) {
+            existingBankAccount.color = bankAccount.color
+        }
+        const response = await this.bankAccountRepository.save(existingBankAccount)
+        return response.toDTO()
+    }
+
+    async delete(userId: string, id: string): Promise<void> {
+        const existingBankAccount = await this.bankAccountRepository.findOne({
+            where: {
+                id: id,
+                user: {
+                    id: userId,
+                },
+            },
+        })
+        if (!existingBankAccount) {
+            throw new BadRequestException('Conta bancária não encontrada')
+        }
+        await this.bankAccountRepository.remove(existingBankAccount)
     }
 
     async getAll(userId: string, bankAccount: GetAllBankAccountDTO): Promise<ResponseBankAccountListDTO> {
@@ -41,6 +78,22 @@ export class BankAccountService {
         })
         return {
             accounts: response.map((bankAccount) => bankAccount.toDTO()),
+            total: await this.bankAccountRepository.count({ where: where }),
         }
+    }
+
+    async detail(userId: string, id: string): Promise<ResponseBankAccountDTO> {
+        const bankAccount = await this.bankAccountRepository.findOne({
+            where: {
+                id: id,
+                user: {
+                    id: userId,
+                },
+            },
+        })
+        if (!bankAccount) {
+            throw new BadRequestException('Conta bancária não encontrada')
+        }
+        return bankAccount.toDTO()
     }
 }

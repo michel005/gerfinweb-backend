@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsNumber } from 'class-validator'
-import { ErrorCode } from 'src/constant/ErrorCode'
+import { ErrorCode } from '@/constant/ErrorCode'
 
 export class PaginationDTO {
     @IsNumber({}, { message: ErrorCode.GENERAL_INVALID_NUMBER_FIELD })

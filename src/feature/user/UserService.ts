@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcryptjs'
-import { User } from 'src/entity/User'
-import { CreateUserDTO, ResponseUserDTO, UpdateUserDTO } from 'src/feature/user/dto'
+import { User } from '@/entity/User'
+import { CreateUserDTO, ResponseUserDTO, UpdateUserDTO } from './dto'
 import { Repository } from 'typeorm'
 
 @Injectable()

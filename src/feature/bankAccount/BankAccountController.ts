@@ -1,13 +1,14 @@
-import { Body, Controller, Get, Post, Query, Request, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Request, Res, UseGuards } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { ApiBearerAuth, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
-import { CustomBadRequestExceptionDTO } from 'src/dto'
-import { CustomUserRequest } from 'src/type/CustomUserRequest'
+import { ApiBearerAuth, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { BankAccountTypeValues } from '@/constant/BankAccountType'
+import { CustomBadRequestExceptionDTO } from '@/dto'
+import { CustomUserRequest } from '@/type/CustomUserRequest'
 import { BankAccountService } from './BankAccountService'
 import { CreateBankAccountDTO, GetAllBankAccountDTO, ResponseBankAccountDTO, ResponseBankAccountListDTO } from './dto'
-import { BankAccountTypeValues } from 'src/constant/BankAccountType'
+import { UpdateBankAccountDTO } from './dto/UpdateBankAccountDTO'
 
-@ApiTags('BankAccount')
+@ApiTags('Bank Account')
 @UseGuards(AuthGuard('jwt'))
 @ApiBearerAuth('Authorization')
 @ApiResponse({
@@ -35,6 +36,58 @@ export class BankAccountController {
         @Body() bankAccount: CreateBankAccountDTO
     ): Promise<ResponseBankAccountDTO> {
         return await this.bankAccountService.create(req.user.id, bankAccount)
+    }
+
+    @Put('/:id/update')
+    @ApiParam({
+        name: 'id',
+        required: true,
+        type: String,
+        description: 'ID da conta bancária',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Atualiza um usuário com sucesso',
+        type: ResponseBankAccountDTO,
+    })
+    async update(
+        @Request() req: CustomUserRequest,
+        @Param('id') id: string,
+        @Body() bankAccount: UpdateBankAccountDTO
+    ): Promise<ResponseBankAccountDTO> {
+        return await this.bankAccountService.update(req.user.id, id, bankAccount)
+    }
+
+    @Delete('/:id/delete')
+    @ApiParam({
+        name: 'id',
+        required: true,
+        type: String,
+        description: 'ID da conta bancária',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Deleta uma conta bancária com sucesso',
+        type: ResponseBankAccountDTO,
+    })
+    async delete(@Request() req: CustomUserRequest, @Param('id') id: string): Promise<void> {
+        await this.bankAccountService.delete(req.user.id, id)
+    }
+
+    @Get('/:id/detail')
+    @ApiParam({
+        name: 'id',
+        required: true,
+        type: String,
+        description: 'ID da recorrência',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Retorna uma conta bancária com sucesso',
+        type: ResponseBankAccountDTO,
+    })
+    async detail(@Request() req: CustomUserRequest, @Param('id') id: string): Promise<ResponseBankAccountDTO> {
+        return await this.bankAccountService.detail(req.user.id, id)
     }
 
     @Get('/getAll')

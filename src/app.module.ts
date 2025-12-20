@@ -1,16 +1,19 @@
 import { Module } from '@nestjs/common'
+import { JwtModule } from '@nestjs/jwt'
+import { PassportModule } from '@nestjs/passport'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import * as process from 'node:process'
-import { User } from './entity/User'
-import { UserService } from './feature/user/UserService'
-import { PassportModule } from '@nestjs/passport'
-import { JwtModule } from '@nestjs/jwt'
 import { AuthService } from './authentication/AuthService'
 import { JwtStrategy } from './authentication/JwtStrategy'
-import { UserController } from './feature/user/UserController'
+import { BankAccount } from './entity/BankAccount'
+import { Recurrence } from './entity/Recurrence'
+import { User } from './entity/User'
 import { BankAccountController } from './feature/bankAccount/BankAccountController'
 import { BankAccountService } from './feature/bankAccount/BankAccountService'
-import { BankAccount } from './entity/BankAccount'
+import { RecurrenceController } from './feature/recurrences/RecurrenceController'
+import { RecurrenceService } from './feature/recurrences/RecurrenceService'
+import { UserController } from './feature/user/UserController'
+import { UserService } from './feature/user/UserService'
 
 @Module({
     imports: [
@@ -26,13 +29,13 @@ import { BankAccount } from './entity/BankAccount'
             username: process.env.MYSQL_USER || 'root',
             password: process.env.MYSQL_PASSWORD || '123456',
             database: process.env.MYSQL_DATABASE || 'gerfinweb',
-            entities: [User, BankAccount],
+            entities: [User, BankAccount, Recurrence],
             synchronize: process.env.NODE_ENV !== 'production',
             logging: process.env.NODE_ENV === 'development',
         }),
-        TypeOrmModule.forFeature([BankAccount, User]), // Entities
+        TypeOrmModule.forFeature([BankAccount, User, Recurrence]), // Entities
     ],
-    controllers: [BankAccountController, UserController], // Controllers
-    providers: [BankAccountService, UserService, AuthService, JwtStrategy], // Services
+    controllers: [RecurrenceController, BankAccountController, UserController], // Controllers
+    providers: [RecurrenceService, BankAccountService, UserService, AuthService, JwtStrategy], // Services
 })
 export class AppModule {}

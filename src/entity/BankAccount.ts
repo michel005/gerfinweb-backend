@@ -1,7 +1,8 @@
-import { BankAccountType, BankAccountTypeValues } from 'src/constant/BankAccountType'
-import { CreateBankAccountDTO, ResponseBankAccountDTO } from 'src/feature/bankAccount/dto'
+import { BankAccountType, BankAccountTypeValues } from '@/constant/BankAccountType'
+import { CreateBankAccountDTO, ResponseBankAccountDTO } from '@/feature/bankAccount/dto'
 import { Column, Entity } from 'typeorm'
 import { AbstractUserEntity } from './AbstractUserEntity'
+import { UpdateBankAccountDTO } from '@/feature/bankAccount/dto/UpdateBankAccountDTO'
 
 @Entity('BankAccount')
 export class BankAccount extends AbstractUserEntity {
@@ -18,7 +19,7 @@ export class BankAccount extends AbstractUserEntity {
     @Column({ type: 'varchar', length: 7, default: '#000000' })
     color?: string
 
-    static fromDTO(dto: CreateBankAccountDTO): BankAccount {
+    static fromDTO(dto: CreateBankAccountDTO | UpdateBankAccountDTO): BankAccount {
         const bankAccount = new BankAccount()
         bankAccount.name = dto.name
         bankAccount.type = dto.type
@@ -32,6 +33,8 @@ export class BankAccount extends AbstractUserEntity {
             name: this.name,
             type: this.type,
             color: this.color,
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
         }
     }
 }

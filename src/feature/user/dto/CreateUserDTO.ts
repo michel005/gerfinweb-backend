@@ -1,15 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger'
-import {
-    IsDateString,
-    IsEmail,
-    IsNotEmpty,
-    IsOptional,
-    IsString,
-    IsUrl,
-} from 'class-validator'
-import { ErrorCode } from 'src/constant/ErrorCode'
-import { User } from 'src/entity/User'
-import { IsNotFutureDate } from 'src/validation/IsNotFutureDate'
+import { IsDateString, IsEmail, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator'
+import { ErrorCode } from '@/constant/ErrorCode'
+import { User } from '@/entity/User'
+import { IsNotFutureDate } from '@/validation/IsNotFutureDate'
+import { IsPasswordValid } from '@/validation/IsPasswordValid'
 
 export class CreateUserDTO {
     @ApiProperty({
@@ -57,6 +51,13 @@ export class CreateUserDTO {
     })
     @IsNotEmpty({ message: ErrorCode.GENERAL_MANDATORY_FIELD })
     @IsString({ message: ErrorCode.GENERAL_INVALID_STRING_FIELD })
+    @IsPasswordValid({
+        minLength: 8,
+        hasUpperCase: true,
+        hasLowerCase: true,
+        hasNumber: true,
+        hasSpecialChar: true,
+    })
     password: User['password']
 
     @ApiProperty({
@@ -65,5 +66,12 @@ export class CreateUserDTO {
     })
     @IsNotEmpty({ message: ErrorCode.GENERAL_MANDATORY_FIELD })
     @IsString({ message: ErrorCode.GENERAL_INVALID_STRING_FIELD })
+    @IsPasswordValid({
+        minLength: 8,
+        hasUpperCase: true,
+        hasLowerCase: true,
+        hasNumber: true,
+        hasSpecialChar: true,
+    })
     passwordConfirmation: User['password']
 }

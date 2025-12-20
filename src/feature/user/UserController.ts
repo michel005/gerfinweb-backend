@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, Delete, Get, Patch, Post, Request, UseGuards } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
-import { CustomBadRequestExceptionDTO } from 'src/dto'
+import { CustomBadRequestExceptionDTO } from '../../dto'
 import { AuthService } from '../../authentication/AuthService'
 import {
     CreateUserDTO,

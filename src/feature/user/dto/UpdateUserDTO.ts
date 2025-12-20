@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsDateString, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator'
-import { ErrorCode } from 'src/constant/ErrorCode'
-import { User } from 'src/entity/User'
-import { IsNotFutureDate } from 'src/validation/IsNotFutureDate'
+import { ErrorCode } from '@/constant/ErrorCode'
+import { User } from '@/entity/User'
+import { IsNotFutureDate } from '@/validation/IsNotFutureDate'
 
 export class UpdateUserDTO {
     @IsOptional()

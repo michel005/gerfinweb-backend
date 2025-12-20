@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsNotEmpty, IsString } from 'class-validator'
-import { ErrorCode } from 'src/constant/ErrorCode'
-import { User } from 'src/entity/User'
+import { ErrorCode } from '@/constant/ErrorCode'
+import { User } from '@/entity/User'
 
 export class RemoveUserDTO {
     @IsNotEmpty({ message: ErrorCode.GENERAL_MANDATORY_FIELD })

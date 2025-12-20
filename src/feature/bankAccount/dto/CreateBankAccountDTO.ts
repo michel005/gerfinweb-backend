@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsEnum, IsHexColor, IsString } from 'class-validator'
-import { BankAccountType } from 'src/constant/BankAccountType'
-import { ErrorCode } from 'src/constant/ErrorCode'
+import { BankAccountType } from '@/constant/BankAccountType'
+import { ErrorCode } from '@/constant/ErrorCode'
 
 export class CreateBankAccountDTO {
     @ApiProperty({
