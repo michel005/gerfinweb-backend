@@ -1,8 +1,5 @@
 import { AuthService } from '@/authentication/AuthService'
 import { JwtStrategy } from '@/authentication/JwtStrategy'
-import { BankAccount } from '@/entity/BankAccount'
-import { Recurrence } from '@/entity/Recurrence'
-import { User } from '@/entity/User'
 import { BankAccountController } from '@/feature/bankAccount/BankAccountController'
 import { BankAccountService } from '@/feature/bankAccount/BankAccountService'
 import { RecurrenceController } from '@/feature/recurrences/RecurrenceController'
@@ -17,6 +14,9 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { DataSource } from 'typeorm'
 import { newDb } from 'pg-mem'
 import { ValidationError } from 'class-validator'
+import { MovementController } from '@/feature/movement/MovementController'
+import MovementService from '@/feature/movement/MovementService'
+import * as Entities from '@/entity'
 
 export async function createTestApp() {
     const db = newDb()
@@ -35,7 +35,7 @@ export async function createTestApp() {
 
     const dataSource: DataSource = await db.adapters.createTypeormDataSource({
         type: 'postgres',
-        entities: [User, BankAccount, Recurrence],
+        entities: Object.values(Entities),
         synchronize: true,
     })
 
@@ -50,14 +50,14 @@ export async function createTestApp() {
             }),
             TypeOrmModule.forRoot({
                 type: 'postgres',
-                entities: [User, BankAccount, Recurrence],
+                entities: Object.values(Entities),
                 synchronize: true,
                 logging: false,
             }),
-            TypeOrmModule.forFeature([User, BankAccount, Recurrence]),
+            TypeOrmModule.forFeature(Object.values(Entities)),
         ],
-        controllers: [RecurrenceController, BankAccountController, UserController],
-        providers: [RecurrenceService, BankAccountService, UserService, AuthService, JwtStrategy],
+        controllers: [MovementController, RecurrenceController, BankAccountController, UserController],
+        providers: [MovementService, RecurrenceService, BankAccountService, UserService, AuthService, JwtStrategy],
     })
         .overrideProvider(DataSource)
         .useValue(dataSource)

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { BeforeInsert, CreateDateColumn, PrimaryColumn } from 'typeorm'
+import { BeforeInsert, BeforeUpdate, CreateDateColumn, PrimaryColumn } from 'typeorm'
 import { v4 as uuidv4 } from 'uuid'
 
 export abstract class AbstractEntity {
@@ -25,5 +25,11 @@ export abstract class AbstractEntity {
     @BeforeInsert()
     async beforeInsert() {
         this.id = uuidv4()
+        this.createdAt = new Date()
+    }
+
+    @BeforeUpdate()
+    async beforeUpdate() {
+        this.updatedAt = new Date()
     }
 }

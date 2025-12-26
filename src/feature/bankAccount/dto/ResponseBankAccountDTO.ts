@@ -42,4 +42,11 @@ export class ResponseBankAccountDTO {
         required: false,
     })
     color?: string
+
+    @ApiProperty({
+        description: 'Indica se a conta bancária está ativa',
+        example: true,
+        required: false,
+    })
+    active?: boolean
 }

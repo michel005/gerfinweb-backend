@@ -1,0 +1,5 @@
+export { CreateMovementDTO } from '@/feature/movement/dto/CreateMovementDTO'
+export { UpdateMovementDTO } from '@/feature/movement/dto/UpdateMovementDTO'
+export { ResponseMovementDTO } from '@/feature/movement/dto/ResponseMovementDTO'
+export { ResponseMovementListDTO } from '@/feature/movement/dto/ResponseMovementListDTO'
+export { RecurrencesMovementByMonthYearDTO } from '@/feature/movement/dto/RecurrencesMovementByMonthYearDTO'

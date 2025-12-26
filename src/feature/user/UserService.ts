@@ -1,21 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcryptjs'
 import { User } from '@/entity/User'
 import { CreateUserDTO, ResponseUserDTO, UpdateUserDTO } from './dto'
-import { Repository } from 'typeorm'
+import { AbstractService } from '@/feature/AbstractService'
 
 @Injectable()
-export class UserService {
-    constructor(@InjectRepository(User) readonly userRepository: Repository<User>) {}
-
+export class UserService extends AbstractService {
     async findByEmail({ email }: { email: string }) {
-        const response = await this.userRepository.findOne({
+        return await this.userRepository.findOne({
             where: {
                 email,
             },
         })
-        return response
     }
 
     async create({ user }: { user: CreateUserDTO }): Promise<ResponseUserDTO> {
@@ -46,6 +42,8 @@ export class UserService {
         existingUser.fullName = user.fullName
         existingUser.birthDate = user.birthDate
         existingUser.profilePicture = user.profilePicture
+        existingUser.colorSchema = user.colorSchema
+        existingUser.biography = user.biography
 
         const response: any = await this.userRepository.save(existingUser)
         return response.toDTO()

@@ -2,6 +2,7 @@ import { AbstractDSL } from './AbstractDSL'
 import { HttpStatus, INestApplication } from '@nestjs/common'
 import { CreateUserDTO, LoginUserDTO } from '@/feature/user/dto'
 import { Test } from '@nestjs/testing'
+import { DSL } from './DSL'
 
 export class UserDSL extends AbstractDSL {
     userData: any
@@ -11,8 +12,8 @@ export class UserDSL extends AbstractDSL {
     updatePasswordData: any
     deletePassword: string | null
 
-    constructor(app: INestApplication) {
-        super(app, {
+    constructor(app: INestApplication, root: DSL) {
+        super(app, root, {
             userData: async (userData: CreateUserDTO) => {
                 this.userData = userData
             },
@@ -142,6 +143,7 @@ export class UserDSL extends AbstractDSL {
         user.profilePicture = 'https://example.com/profile.jpg'
         user.password = 'StrongP@ssw0rd!'
         user.passwordConfirmation = 'StrongP@ssw0rd!'
+        user.colorSchema = '#3399ff'
 
         this.routeStep('Set User With Simple Data', 'userData', user)
         return this

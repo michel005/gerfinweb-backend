@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { RecurrenceType } from '@/constant/RecurrenceType'
 import { ResponseBankAccountDTO } from '@/feature/bankAccount/dto'
+import { ResponseCategoryDTO } from '@/feature/category/dto'
 
 export class ResponseRecurrenceDTO {
     @ApiProperty({
@@ -37,10 +38,9 @@ export class ResponseRecurrenceDTO {
 
     @ApiProperty({
         description: 'Categorias associadas à recorrência',
-        example: ['Entretenimento', 'Assinaturas'],
-        required: true,
+        type: () => ResponseCategoryDTO,
     })
-    categories: string[]
+    category?: ResponseCategoryDTO
 
     @ApiProperty({
         description: 'Tipo da recorrência',
@@ -55,6 +55,12 @@ export class ResponseRecurrenceDTO {
         required: true,
     })
     originBankAccount: ResponseBankAccountDTO
+
+    @ApiProperty({
+        description: 'Conta bancária de destino da recorrência',
+        required: false,
+    })
+    destinationBankAccount?: ResponseBankAccountDTO
 
     @ApiProperty({
         description: 'Valor da recorrência',

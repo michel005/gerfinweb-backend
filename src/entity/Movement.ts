@@ -1,13 +1,13 @@
-import { RecurrenceType } from '@/constant/RecurrenceType'
-import { UpdateRecurrenceDTO } from '@/feature/recurrences/dto'
-import { CreateRecurrenceDTO } from '@/feature/recurrences/dto/CreateRecurrenceDTO'
-import { Column, Entity, ManyToOne } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 import { AbstractUserEntity } from './AbstractUserEntity'
 import { BankAccount } from './BankAccount'
+import { CreateMovementDTO, UpdateMovementDTO } from '@/feature/movement/dto'
+import { Recurrence } from '@/entity/Recurrence'
+import { Category } from '@/entity/Category'
 
 @Entity('Movement')
 export class Movement extends AbstractUserEntity {
-    @Column({ type: 'date', nullable: false })
+    @Column({ type: 'date', nullable: true })
     date: Date
 
     @Column({ type: 'date', nullable: false })
@@ -16,48 +16,70 @@ export class Movement extends AbstractUserEntity {
     @Column({ type: 'varchar', length: 255, nullable: false })
     description: string
 
-    @Column({ type: 'simple-array', nullable: false })
-    categories: string[]
+    @ManyToOne(() => Category, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'categoryId' })
+    category?: Category | null
 
-    @Column({
-        type: 'enum',
-        nullable: false,
-        enum: RecurrenceType,
-    })
-    type: RecurrenceType
+    @ManyToOne(() => Recurrence, { nullable: true, onDelete: 'SET NULL' })
+    recurrence?: Recurrence | null
 
     @ManyToOne(() => BankAccount, { nullable: false })
     originBankAccount: BankAccount
 
-    @ManyToOne(() => BankAccount, { nullable: false })
-    destinationBankAccount: BankAccount
+    @ManyToOne(() => BankAccount, { nullable: true, onDelete: 'SET NULL' })
+    destinationBankAccount?: BankAccount | null
 
-    @Column({ type: 'decimal', precision: 15, scale: 2, nullable: false })
+    @Column({
+        type: 'decimal',
+        precision: 15,
+        scale: 2,
+        nullable: false,
+        transformer: {
+            to: (value: number) => value,
+            from: (value: string) => parseFloat(value),
+        },
+    })
     value: number
 
-    static fromDTO(dto: any): Movement {
-        const recurrence = new Movement()
-        recurrence.description = dto.description
-        recurrence.categories = dto.categories
-        recurrence.type = dto.type
-        recurrence.value = dto.value
-        recurrence.originBankAccount = new BankAccount()
-        recurrence.originBankAccount.id = dto.originBankAccountId
-        recurrence.destinationBankAccount = new BankAccount()
-        recurrence.destinationBankAccount.id = dto.destinationBankAccountId
-        return recurrence
+    static fromDTO(dto: CreateMovementDTO | UpdateMovementDTO): Movement {
+        const movement = new Movement()
+        movement.date = dto.date
+        movement.dueDate = dto.dueDate
+        movement.description = dto.description
+        movement.value = dto.value
+        if (dto.categoryId) {
+            movement.category = new Category()
+            movement.category.id = dto.categoryId
+        }
+        if (dto.recurrenceId) {
+            movement.recurrence = new Recurrence()
+            movement.recurrence.id = dto.recurrenceId
+        }
+        if (dto.categoryId) {
+            movement.category = new Category()
+            movement.category.id = dto.categoryId
+        }
+        if (dto.originBankAccountId) {
+            movement.originBankAccount = new BankAccount()
+            movement.originBankAccount.id = dto.originBankAccountId
+        }
+        if (dto.destinationBankAccountId) {
+            movement.destinationBankAccount = new BankAccount()
+            movement.destinationBankAccount.id = dto.destinationBankAccountId
+        }
+        return movement
     }
 
     toDTO() {
         return {
+            id: this.id,
             date: this.date,
             dueDate: this.dueDate,
-            id: this.id,
             description: this.description,
-            categories: this.categories,
-            type: this.type,
-            originBankAccount: this.originBankAccount,
-            destinationBankAccount: this.destinationBankAccount,
+            category: this.category ? this.category.toDTO() : undefined,
+            recurrence: this.recurrence ? this.recurrence.toDTO() : undefined,
+            originBankAccount: this.originBankAccount ? this.originBankAccount.toDTO() : undefined,
+            destinationBankAccount: this.destinationBankAccount ? this.destinationBankAccount.toDTO() : undefined,
             value: this.value,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,

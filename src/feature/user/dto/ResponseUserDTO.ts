@@ -37,4 +37,16 @@ export class ResponseUserDTO {
         example: 'joao.silva@example.com',
     })
     email: User['email']
+
+    @ApiProperty({
+        description: 'Cor preferida do usuário',
+        example: '#3399ff',
+    })
+    colorSchema: User['colorSchema']
+
+    @ApiProperty({
+        description: 'Biografia do usuário',
+        example: 'Apaixonado por tecnologia e programação.',
+    })
+    biography: User['biography']
 }

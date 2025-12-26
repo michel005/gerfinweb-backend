@@ -1,6 +1,7 @@
 import { UserDSL } from './UserDSL'
 import { createTestApp } from '../utils/createTestApp'
 import { INestApplication } from '@nestjs/common'
+import { BankAccountDSL } from './BankAccountDSL'
 
 export class DSL {
     app: INestApplication
@@ -10,7 +11,11 @@ export class DSL {
     }
 
     user() {
-        return new UserDSL(this.app)
+        return new UserDSL(this.app, this)
+    }
+
+    bankAccount(token: string) {
+        return new BankAccountDSL(this.app, this, token)
     }
 
     static async init() {

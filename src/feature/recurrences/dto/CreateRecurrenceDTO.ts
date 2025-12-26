@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEnum, IsNumber, IsObject, IsString } from 'class-validator'
+import { IsEnum, IsNumber, IsString } from 'class-validator'
 import { ErrorCode } from '@/constant/ErrorCode'
 import { RecurrenceType } from '@/constant/RecurrenceType'
 
@@ -38,15 +38,24 @@ export class CreateRecurrenceDTO {
     originBankAccountId: string
 
     @ApiProperty({
-        description: 'Categorias associadas à recorrência',
-        example: ['Entretenimento', 'Assinaturas'],
-        required: true,
+        description: 'ID da conta bancária de destino da recorrência',
+        example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        required: false,
+    })
+    @IsString({
+        message: ErrorCode.GENERAL_INVALID_STRING_FIELD,
+    })
+    destinationBankAccountId?: string
+
+    @ApiProperty({
+        description: 'ID da categoria associada à recorrência',
+        example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     })
     @IsString({
         each: true,
         message: ErrorCode.GENERAL_INVALID_STRING_FIELD,
     })
-    categories: string[]
+    categoryId: string
 
     @ApiProperty({
         description: 'Tipo da recorrência',

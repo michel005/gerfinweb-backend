@@ -1,8 +1,8 @@
 import { BadRequestException, Body, Controller, Delete, Get, Patch, Post, Request, UseGuards } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
-import { CustomBadRequestExceptionDTO } from '../../dto'
-import { AuthService } from '../../authentication/AuthService'
+import { CustomBadRequestExceptionDTO } from '@/dto'
+import { AuthService } from '@/authentication/AuthService'
 import {
     CreateUserDTO,
     LoginResponseUserDTO,
@@ -13,6 +13,7 @@ import {
     UpdateUserDTO,
 } from './dto'
 import { UserService } from './UserService'
+import { CustomUserRequest } from '@/type/CustomUserRequest'
 
 @ApiTags('User')
 @Controller('/user')
@@ -72,7 +73,7 @@ export class UserController {
         description: 'Usuário não autorizado',
         type: CustomBadRequestExceptionDTO,
     })
-    async me(@Request() req) {
+    async me(@Request() req: CustomUserRequest) {
         return req.user.toDTO()
     }
 
@@ -94,7 +95,7 @@ export class UserController {
         description: 'Usuário não autorizado',
         type: CustomBadRequestExceptionDTO,
     })
-    async updateInfo(@Request() req, @Body() dto: UpdateUserDTO) {
+    async updateInfo(@Request() req: CustomUserRequest, @Body() dto: UpdateUserDTO) {
         return this.userService.update({
             id: req.user.id,
             user: dto,
@@ -119,7 +120,7 @@ export class UserController {
         description: 'Usuário não autorizado',
         type: CustomBadRequestExceptionDTO,
     })
-    async updatePassword(@Request() req, @Body() dto: UpdatePasswordUserDTO) {
+    async updatePassword(@Request() req: CustomUserRequest, @Body() dto: UpdatePasswordUserDTO) {
         return this.userService.updatePassword({
             id: req.user.id,
             oldPassword: dto.oldPassword,
@@ -145,7 +146,7 @@ export class UserController {
         description: 'Usuário não autorizado',
         type: CustomBadRequestExceptionDTO,
     })
-    async delete(@Request() req, @Body() dto: RemoveUserDTO) {
+    async delete(@Request() req: CustomUserRequest, @Body() dto: RemoveUserDTO) {
         return this.userService.remove({
             id: req.user.id,
             password: dto.password,

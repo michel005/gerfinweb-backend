@@ -5,15 +5,19 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import * as process from 'node:process'
 import { AuthService } from './authentication/AuthService'
 import { JwtStrategy } from './authentication/JwtStrategy'
-import { BankAccount } from './entity/BankAccount'
-import { Recurrence } from './entity/Recurrence'
-import { User } from './entity/User'
 import { BankAccountController } from './feature/bankAccount/BankAccountController'
 import { BankAccountService } from './feature/bankAccount/BankAccountService'
 import { RecurrenceController } from './feature/recurrences/RecurrenceController'
 import { RecurrenceService } from './feature/recurrences/RecurrenceService'
 import { UserController } from './feature/user/UserController'
 import { UserService } from './feature/user/UserService'
+import MovementService from '@/feature/movement/MovementService'
+import { MovementController } from '@/feature/movement/MovementController'
+import { CategoryController } from '@/feature/category/CategoryController'
+import { CategoryService } from '@/feature/category/CategoryService'
+import * as Entities from './entity'
+import { SearchController } from '@/feature/search/SearchController'
+import { SearchService } from '@/feature/search/SearchService'
 
 @Module({
     imports: [
@@ -29,13 +33,29 @@ import { UserService } from './feature/user/UserService'
             username: process.env.MYSQL_USER || 'root',
             password: process.env.MYSQL_PASSWORD || '123456',
             database: process.env.MYSQL_DATABASE || 'gerfinweb',
-            entities: [User, BankAccount, Recurrence],
+            entities: Object.values(Entities),
             synchronize: process.env.NODE_ENV !== 'production',
-            logging: process.env.NODE_ENV === 'development',
+            logging: true,
         }),
-        TypeOrmModule.forFeature([BankAccount, User, Recurrence]), // Entities
+        TypeOrmModule.forFeature(Object.values(Entities)),
     ],
-    controllers: [RecurrenceController, BankAccountController, UserController], // Controllers
-    providers: [RecurrenceService, BankAccountService, UserService, AuthService, JwtStrategy], // Services
+    controllers: [
+        SearchController,
+        CategoryController,
+        MovementController,
+        RecurrenceController,
+        BankAccountController,
+        UserController,
+    ],
+    providers: [
+        SearchService,
+        CategoryService,
+        MovementService,
+        RecurrenceService,
+        BankAccountService,
+        UserService,
+        AuthService,
+        JwtStrategy,
+    ],
 })
 export class AppModule {}

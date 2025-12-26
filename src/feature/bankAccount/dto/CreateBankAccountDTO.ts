@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEnum, IsHexColor, IsString } from 'class-validator'
+import { IsBoolean, IsEnum, IsHexColor, IsString } from 'class-validator'
 import { BankAccountType } from '@/constant/BankAccountType'
 import { ErrorCode } from '@/constant/ErrorCode'
 

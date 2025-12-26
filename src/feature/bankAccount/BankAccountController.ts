@@ -1,30 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Request, Res, UseGuards } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
-import { ApiBearerAuth, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Request } from '@nestjs/common'
+import { ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { BankAccountTypeValues } from '@/constant/BankAccountType'
-import { CustomBadRequestExceptionDTO } from '@/dto'
 import { CustomUserRequest } from '@/type/CustomUserRequest'
-import { BankAccountService } from './BankAccountService'
 import { CreateBankAccountDTO, GetAllBankAccountDTO, ResponseBankAccountDTO, ResponseBankAccountListDTO } from './dto'
 import { UpdateBankAccountDTO } from './dto/UpdateBankAccountDTO'
+import { AbstractPrivateController } from '@/feature/AbstractPrivateController'
 
 @ApiTags('Bank Account')
-@UseGuards(AuthGuard('jwt'))
-@ApiBearerAuth('Authorization')
-@ApiResponse({
-    status: 400,
-    description: 'Erros diversos de validação',
-    type: CustomBadRequestExceptionDTO,
-})
-@ApiResponse({
-    status: 401,
-    description: 'Usuário não autorizado',
-    type: CustomBadRequestExceptionDTO,
-})
 @Controller('/bankAccount')
-export class BankAccountController {
-    constructor(private bankAccountService: BankAccountService) {}
-
+export class BankAccountController extends AbstractPrivateController {
     @Post('/create')
     @ApiResponse({
         status: 200,
@@ -140,5 +124,72 @@ export class BankAccountController {
             page,
             size,
         })
+    }
+
+    @Get('/getAllWithAmount')
+    @ApiResponse({
+        status: 200,
+        description:
+            'Retorna uma lista de contas bancárias de acordo com o filtro informado incluindo saldo atual e previsto',
+        type: ResponseBankAccountListDTO,
+    })
+    @ApiQuery({
+        name: 'name',
+        required: false,
+        type: String,
+        description: 'Nome da conta bancária',
+    })
+    @ApiQuery({
+        name: 'type',
+        required: false,
+        type: String,
+        enum: BankAccountTypeValues,
+        description: 'Tipo da conta bancária',
+    })
+    @ApiQuery({
+        name: 'page',
+        required: true,
+        type: Number,
+        description: 'Número da página',
+        default: 0,
+    })
+    @ApiQuery({
+        name: 'date',
+        required: true,
+        type: String,
+        format: 'date',
+        description: 'Data de referência para saldo atual e futuro',
+        default: new Date().toISOString(),
+    })
+    @ApiQuery({
+        name: 'size',
+        required: true,
+        type: Number,
+        description: 'Quantidade de itens por página',
+        default: 10,
+    })
+    async getAllWithAmount(
+        @Request() req: CustomUserRequest,
+        @Query('page')
+        page: GetAllBankAccountDTO['page'],
+        @Query('size')
+        size: GetAllBankAccountDTO['size'],
+        @Query('date')
+        date: Date,
+        @Query('name')
+        name?: GetAllBankAccountDTO['name'],
+        @Query('type')
+        type?: GetAllBankAccountDTO['type']
+    ): Promise<ResponseBankAccountListDTO> {
+        return await this.bankAccountService.getAllWithAmount(
+            req.user.id,
+            {
+                name,
+                type,
+                page,
+                size,
+            },
+            date
+        )
     }
 }

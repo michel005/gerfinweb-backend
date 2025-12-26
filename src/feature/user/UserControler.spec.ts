@@ -1,24 +1,32 @@
 import { ErrorCode } from '@/constant/ErrorCode'
-import { DSL } from '../../../test/dsl/DSL'
 import { HttpStatus } from '@nestjs/common'
+import { DSLTest } from '../../../test/dsl/DSLTest'
 
-describe('UserControler', () => {
-    let dsl: DSL
-    beforeEach(async () => {
-        dsl = await DSL.init()
-    })
-
-    afterEach(async () => {
-        await dsl.close()
+DSLTest('UserController > Create', (dsl) => {
+    it('Create user successfully', async () => {
+        await dsl()
+            .user()
+            .setUserWithSimpleData()
+            .create(HttpStatus.CREATED)
+            .validateResponse((response) => {
+                expect(response.body.createdAt).toBeDefined()
+                expect(response.body.updatedAt).toBeDefined()
+                expect(response.body.fullName).toBeDefined()
+                expect(response.body.email).toBeDefined()
+                expect(response.body.profilePicture).toBeDefined()
+                expect(response.body.colorSchema).toBeDefined()
+                expect(response.body.biography).toBeDefined()
+            })
+            .build()
     })
 
     it('Should validate the create form', async () => {
-        await dsl
+        await dsl()
             .user()
             .setUserWithEmptyData()
             .create(HttpStatus.BAD_REQUEST)
             .validateResponse((response) => {
-                expect(response.body.details).not.toBeNull()
+                expect(Object.keys(response.body.details).length).toBe(4)
                 expect(response.body.details.fullName).toBe(ErrorCode.GENERAL_MANDATORY_FIELD)
                 expect(response.body.details.email).toBe(ErrorCode.GENERAL_MANDATORY_FIELD)
                 expect(response.body.details.password).toBe(ErrorCode.GENERAL_MANDATORY_FIELD)
@@ -26,8 +34,9 @@ describe('UserControler', () => {
             })
             .build()
     })
+
     it('Should validate a user with a existing email', async () => {
-        await dsl
+        await dsl()
             .user()
             .setUserWithSimpleData()
             .create()
@@ -37,8 +46,9 @@ describe('UserControler', () => {
             })
             .build()
     })
+
     it('Should validate a weak password', async () => {
-        await dsl
+        await dsl()
             .user()
             .setUserWithSimpleData()
             .setWeakPassword()
@@ -48,18 +58,11 @@ describe('UserControler', () => {
             })
             .build()
     })
-    it('Should create a user successfully', async () => {
-        await dsl
-            .user()
-            .setUserWithSimpleData()
-            .create(HttpStatus.CREATED)
-            .validateResponse((response) => {
-                expect(response.body.createdAt).toBeDefined()
-            })
-            .build()
-    })
-    it('Should login successfully', async () => {
-        await dsl
+})
+
+DSLTest('UserController > Login', (dsl) => {
+    it('Login user successfully', async () => {
+        await dsl()
             .user()
             .setUserWithSimpleData()
             .create()
@@ -70,8 +73,9 @@ describe('UserControler', () => {
             })
             .build()
     })
+
     it('Should fail to login with wrong password', async () => {
-        await dsl
+        await dsl()
             .user()
             .setUserWithSimpleData()
             .create()
@@ -82,8 +86,11 @@ describe('UserControler', () => {
             })
             .build()
     })
-    it('Should get logged user info', async () => {
-        await dsl
+})
+
+DSLTest('UserController > Me', (dsl) => {
+    it('Get logged user info successfully', async () => {
+        await dsl()
             .user()
             .setUserWithSimpleData()
             .create()
@@ -91,12 +98,13 @@ describe('UserControler', () => {
             .login()
             .me(HttpStatus.OK)
             .validateResponse((response) => {
-                expect(response.body.email).toBe('example@example.com')
+                expect(response.body.fullName).toBeDefined()
             })
             .build()
     })
+
     it('Should fail to get logged user info without login access token', async () => {
-        await dsl
+        await dsl()
             .user()
             .setUserWithSimpleData()
             .create()
@@ -106,8 +114,11 @@ describe('UserControler', () => {
             })
             .build()
     })
-    it('Should update user info', async () => {
-        await dsl
+})
+
+DSLTest('UserController > Update Info', (dsl) => {
+    it('Update user info successfully', async () => {
+        await dsl()
             .user()
             .setUserWithSimpleData()
             .create()
@@ -121,8 +132,9 @@ describe('UserControler', () => {
             })
             .build()
     })
+
     it('Should validate update user without token', async () => {
-        await dsl
+        await dsl()
             .user()
             .setUserWithSimpleData()
             .update(HttpStatus.UNAUTHORIZED)
@@ -131,36 +143,11 @@ describe('UserControler', () => {
             })
             .build()
     })
-    it('Should validate wrong password to update user password', async () => {
-        await dsl
-            .user()
-            .setUserWithSimpleData()
-            .create()
-            .setLoginWithSimpleData()
-            .login()
-            .setInvalidPasswordUpdateData()
-            .updatePassword(HttpStatus.BAD_REQUEST)
-            .validateResponse((response) => {
-                expect(response.body.message).toBe('Senha antiga incorreta!')
-            })
-            .build()
-    })
-    it('Should validate wrong password confirmation to update user password', async () => {
-        await dsl
-            .user()
-            .setUserWithSimpleData()
-            .create()
-            .setLoginWithSimpleData()
-            .login()
-            .setInvalidPasswordConfirmationUpdateData()
-            .updatePassword(HttpStatus.BAD_REQUEST)
-            .validateResponse((response) => {
-                expect(response.body.message).toBe('Senhas não conferem!')
-            })
-            .build()
-    })
-    it('Should change user password successfully', async () => {
-        await dsl
+})
+
+DSLTest('UserController > Update Password', (dsl) => {
+    it('Change user password successfully', async () => {
+        await dsl()
             .user()
             .setUserWithSimpleData()
             .create()
@@ -175,21 +162,41 @@ describe('UserControler', () => {
             .delete(HttpStatus.OK)
             .build()
     })
-    it('Should validate delete user without inform password', async () => {
-        await dsl
+
+    it('Should validate wrong password to update user password', async () => {
+        await dsl()
             .user()
             .setUserWithSimpleData()
             .create()
             .setLoginWithSimpleData()
             .login()
-            .delete(HttpStatus.BAD_REQUEST)
+            .setInvalidPasswordUpdateData()
+            .updatePassword(HttpStatus.BAD_REQUEST)
             .validateResponse((response) => {
-                expect(response.body.details.password).toBe(ErrorCode.GENERAL_MANDATORY_FIELD)
+                expect(response.body.message).toBe('Senha antiga incorreta!')
             })
             .build()
     })
-    it('Should delete user successfully', async () => {
-        await dsl
+
+    it('Should validate wrong password confirmation to update user password', async () => {
+        await dsl()
+            .user()
+            .setUserWithSimpleData()
+            .create()
+            .setLoginWithSimpleData()
+            .login()
+            .setInvalidPasswordConfirmationUpdateData()
+            .updatePassword(HttpStatus.BAD_REQUEST)
+            .validateResponse((response) => {
+                expect(response.body.message).toBe('Senhas não conferem!')
+            })
+            .build()
+    })
+})
+
+DSLTest('UserController > Delete', (dsl) => {
+    it('Delete user successfully', async () => {
+        await dsl()
             .user()
             .setUserWithSimpleData()
             .create()
@@ -200,6 +207,20 @@ describe('UserControler', () => {
             .me(HttpStatus.UNAUTHORIZED)
             .validateResponse((response) => {
                 expect(response.body.message).toBe('Unauthorized')
+            })
+            .build()
+    })
+
+    it('Should validate delete user without inform password', async () => {
+        await dsl()
+            .user()
+            .setUserWithSimpleData()
+            .create()
+            .setLoginWithSimpleData()
+            .login()
+            .delete(HttpStatus.BAD_REQUEST)
+            .validateResponse((response) => {
+                expect(response.body.details.password).toBe(ErrorCode.GENERAL_MANDATORY_FIELD)
             })
             .build()
     })

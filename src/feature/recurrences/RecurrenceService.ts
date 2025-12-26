@@ -1,18 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import { Recurrence } from '@/entity/Recurrence'
-import { Repository } from 'typeorm'
 import { CreateRecurrenceDTO, ResponseRecurrenceDTO, ResponseRecurrenceListDTO, UpdateRecurrenceDTO } from './dto'
 import { PaginationDTO } from '@/dto/PaginationDTO'
 import { BankAccount } from '@/entity/BankAccount'
+import { ResponseMovementDTO } from '@/feature/movement/dto'
+import { Category } from '@/entity/Category'
+import { AbstractService } from '@/feature/AbstractService'
 
 @Injectable()
-export class RecurrenceService {
-    constructor(
-        @InjectRepository(Recurrence) readonly recurrenceRepository: Repository<Recurrence>,
-        @InjectRepository(BankAccount) readonly bankAccountRepository: Repository<BankAccount>
-    ) {}
-
+export class RecurrenceService extends AbstractService {
     async create(userId: string, recurrence: CreateRecurrenceDTO): Promise<ResponseRecurrenceDTO> {
         const bankAccount = await this.bankAccountRepository.findOne({
             where: {
@@ -31,9 +27,6 @@ export class RecurrenceService {
         await newRecurrence.beforeInsert()
         const temp = this.recurrenceRepository.create({
             ...newRecurrence,
-            originBankAccount: {
-                id: recurrence.originBankAccountId,
-            },
             user: {
                 id: userId,
             },
@@ -57,11 +50,17 @@ export class RecurrenceService {
         }
         existingRecurrence.description = recurrence.description
         existingRecurrence.day = recurrence.day
-        existingRecurrence.categories = recurrence.categories
+        existingRecurrence.category = new Category()
+        existingRecurrence.category.id = recurrence.categoryId
         existingRecurrence.type = recurrence.type
         existingRecurrence.value = recurrence.value
         existingRecurrence.originBankAccount = new BankAccount()
         existingRecurrence.originBankAccount.id = recurrence.originBankAccountId
+        if (recurrence.destinationBankAccountId) {
+            existingRecurrence.destinationBankAccount = new BankAccount()
+            existingRecurrence.destinationBankAccount.id = recurrence.destinationBankAccountId
+        }
+
         const response = await this.recurrenceRepository.save(existingRecurrence)
         return response.toDTO()
     }
@@ -122,5 +121,30 @@ export class RecurrenceService {
             throw new BadRequestException('Recorrência não encontrada')
         }
         return recurrence.toDTO()
+    }
+
+    async toMovement(userId: string, id: string, year: number, month: number): Promise<ResponseMovementDTO> {
+        const recurrence = await this.recurrenceRepository.findOne({
+            where: {
+                id: id,
+                user: {
+                    id: userId,
+                },
+            },
+            relations: {
+                originBankAccount: true,
+            },
+        })
+        if (!recurrence) {
+            throw new BadRequestException('Recorrência não encontrada')
+        }
+        return {
+            dueDate: new Date(year, month - 1, recurrence.day),
+            description: recurrence.description,
+            value: recurrence.value,
+            category: recurrence.category.toDTO(),
+            originBankAccount: recurrence.originBankAccount,
+            recurrence: recurrence.toDTO(),
+        }
     }
 }

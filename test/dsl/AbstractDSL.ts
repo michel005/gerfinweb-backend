@@ -1,17 +1,28 @@
 import { INestApplication } from '@nestjs/common'
 import * as supertest from 'supertest'
 import TestAgent from 'supertest/lib/agent'
+import { DSL } from './DSL'
 
 export abstract class AbstractDSL {
     app: INestApplication
     supertest: TestAgent
     routine: [string, string, any][] = []
     routineEvents: { [key: string]: (param: any) => Promise<void> } = {}
+    root: DSL
 
-    constructor(app: INestApplication, routineEvents: { [key: string]: (param: any) => Promise<void> } = {}) {
+    constructor(
+        app: INestApplication,
+        root: DSL,
+        routineEvents: { [key: string]: (param: any) => Promise<void> } = {}
+    ) {
+        this.root = root
         this.app = app
         this.supertest = supertest(app.getHttpServer())
         this.routineEvents = routineEvents
+    }
+
+    back() {
+        return this.root
     }
 
     routeStep(name: string, method: string, param: any) {

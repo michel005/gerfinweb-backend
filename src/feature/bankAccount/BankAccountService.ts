@@ -1,14 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import { BankAccount } from '@/entity/BankAccount'
-import { Repository } from 'typeorm'
 import { CreateBankAccountDTO, GetAllBankAccountDTO, ResponseBankAccountDTO, ResponseBankAccountListDTO } from './dto'
 import { UpdateBankAccountDTO } from './dto/UpdateBankAccountDTO'
+import { AmountBankAccountDTO } from '@/feature/bankAccount/dto/AmountBankAccountDTO'
+import { AbstractService } from '@/feature/AbstractService'
+import { AccountTypeDomain } from '@/type/AccountTypeDomain'
 
 @Injectable()
-export class BankAccountService {
-    constructor(@InjectRepository(BankAccount) readonly bankAccountRepository: Repository<BankAccount>) {}
-
+export class BankAccountService extends AbstractService {
     async create(userId: string, bankAccount: CreateBankAccountDTO): Promise<ResponseBankAccountDTO> {
         const newBankAccount = BankAccount.fromDTO(bankAccount)
         await newBankAccount.beforeInsert()
@@ -18,7 +17,6 @@ export class BankAccountService {
                 id: userId,
             },
         })
-        await temp.beforeInsert()
         const response = await this.bankAccountRepository.save(temp)
         return response.toDTO()
     }
@@ -44,7 +42,7 @@ export class BankAccountService {
         return response.toDTO()
     }
 
-    async delete(userId: string, id: string): Promise<void> {
+    async delete(userId: string, id: string) {
         const existingBankAccount = await this.bankAccountRepository.findOne({
             where: {
                 id: id,
@@ -56,7 +54,9 @@ export class BankAccountService {
         if (!existingBankAccount) {
             throw new BadRequestException('Conta bancária não encontrada')
         }
-        await this.bankAccountRepository.remove(existingBankAccount)
+        existingBankAccount.active = false
+        const response = await this.bankAccountRepository.save(existingBankAccount)
+        return response.toDTO()
     }
 
     async getAll(userId: string, bankAccount: GetAllBankAccountDTO): Promise<ResponseBankAccountListDTO> {
@@ -64,6 +64,7 @@ export class BankAccountService {
             user: {
                 id: userId,
             },
+            active: true,
         }
         if (bankAccount.name) {
             where.name = bankAccount.name
@@ -82,6 +83,73 @@ export class BankAccountService {
         }
     }
 
+    async getAllWithAmount(
+        userId: string,
+        bankAccount: GetAllBankAccountDTO,
+        date: Date
+    ): Promise<{
+        accounts: (ResponseBankAccountDTO & Omit<AmountBankAccountDTO, 'bankAccount'>)[]
+        total: number
+        filters: any
+    }> {
+        const where: any = {
+            user: {
+                id: userId,
+            },
+            active: true,
+        }
+        if (bankAccount.name) {
+            where.name = bankAccount.name
+        }
+        if (bankAccount.type) {
+            where.type = bankAccount.type
+        }
+
+        const queryBuilder = this.bankAccountRepository
+            .createQueryBuilder('ba')
+            .leftJoin(
+                'Movement',
+                'm',
+                '(m.originBankAccountId = ba.id OR m.destinationBankAccount = ba.id) AND m.userId = :userId AND m.dueDate <= :date',
+                { userId, date }
+            )
+            .select('ba')
+            .addSelect(
+                'COALESCE(SUM(CASE WHEN m.date is not null AND (m.date <= :now OR m.dueDate <= :now) THEN CASE WHEN m.destinationBankAccount IS NOT NULL AND m.originBankAccountId = ba.id THEN (m.value * -1) ELSE m.value END ELSE 0 END), 0)',
+                'current'
+            )
+            .addSelect(
+                'COALESCE(SUM(CASE WHEN m.destinationBankAccount IS NOT NULL AND m.originBankAccountId = ba.id THEN (m.value * -1) ELSE m.value END), 0)',
+                'future'
+            )
+            .where('ba.userId = :userId', { userId })
+            .andWhere('ba.active = :active', { active: true })
+            .setParameter('now', new Date().toISOString().split('T')[0])
+            .setParameter('date', date)
+            .groupBy('ba.id')
+            .skip(bankAccount.page * bankAccount.size)
+            .take(bankAccount.size)
+
+        if (bankAccount.name) {
+            queryBuilder.andWhere('ba.name = :name', { name: bankAccount.name })
+        }
+        if (bankAccount.type) {
+            queryBuilder.andWhere('ba.type = :type', { type: bankAccount.type })
+        }
+
+        const accounts = await queryBuilder.getRawAndEntities()
+
+        return {
+            accounts: accounts.entities.map((account: any, index) => ({
+                ...account.toDTO(),
+                current: parseFloat(accounts.raw[index].current || 0),
+                future: parseFloat(accounts.raw[index].future || 0),
+            })),
+            filters: { bankAccount, where },
+            total: await this.bankAccountRepository.count({ where }),
+        }
+    }
+
     async detail(userId: string, id: string): Promise<ResponseBankAccountDTO> {
         const bankAccount = await this.bankAccountRepository.findOne({
             where: {
@@ -89,11 +157,35 @@ export class BankAccountService {
                 user: {
                     id: userId,
                 },
+                active: true,
             },
         })
         if (!bankAccount) {
             throw new BadRequestException('Conta bancária não encontrada')
         }
         return bankAccount.toDTO()
+    }
+
+    async search(userId: string, search: string) {
+        const searchMap = Object.entries(AccountTypeDomain).reduce(
+            (acc, [key, value]) => {
+                acc[value.toLowerCase()] = key
+                return acc
+            },
+            {} as Record<string, string>
+        )
+        const searchLower = search.toLowerCase()
+        const typeMatch = searchMap[searchLower] || search
+
+        const response = await this.bankAccountRepository
+            .createQueryBuilder('bankAccount')
+            .where('(bankAccount.name LIKE :search OR bankAccount.type LIKE :typeMatch)', {
+                search: `%${search}%`,
+                typeMatch: `%${typeMatch}%`,
+            })
+            .andWhere('bankAccount.userId = :userId', { userId })
+            .andWhere('active = :active', { active: true })
+            .getMany()
+        return response.map((x) => x.toDTO())
     }
 }

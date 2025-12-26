@@ -1,29 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
-import { ApiBearerAuth, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
-import { CustomBadRequestExceptionDTO } from '@/dto'
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Request } from '@nestjs/common'
+import { ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { PaginationDTO } from '@/dto/PaginationDTO'
 import { CustomUserRequest } from '@/type/CustomUserRequest'
-import { RecurrenceService } from './RecurrenceService'
 import { CreateRecurrenceDTO, ResponseRecurrenceDTO, ResponseRecurrenceListDTO, UpdateRecurrenceDTO } from './dto'
+import { ResponseMovementDTO } from '@/feature/movement/dto'
+import { AbstractPrivateController } from '@/feature/AbstractPrivateController'
 
 @ApiTags('Recurrence')
-@UseGuards(AuthGuard('jwt'))
-@ApiBearerAuth('Authorization')
-@ApiResponse({
-    status: 400,
-    description: 'Erros diversos de validação',
-    type: CustomBadRequestExceptionDTO,
-})
-@ApiResponse({
-    status: 401,
-    description: 'Usuário não autorizado',
-    type: CustomBadRequestExceptionDTO,
-})
 @Controller('/recurrence')
-export class RecurrenceController {
-    constructor(private recurrenceService: RecurrenceService) {}
-
+export class RecurrenceController extends AbstractPrivateController {
     @Post('/create')
     @ApiResponse({
         status: 200,
@@ -87,6 +72,41 @@ export class RecurrenceController {
     })
     async detail(@Request() req: CustomUserRequest, @Param('id') id: string): Promise<ResponseRecurrenceDTO> {
         return await this.recurrenceService.detail(req.user.id, id)
+    }
+
+    @Get('/:id/toMovement/:year/:month')
+    @ApiParam({
+        name: 'id',
+        required: true,
+        type: String,
+        description: 'ID da recorrência',
+    })
+    @ApiParam({
+        name: 'year',
+        required: true,
+        type: Number,
+        description: 'Ano da movimentação',
+        example: new Date().getFullYear(),
+    })
+    @ApiParam({
+        name: 'month',
+        required: true,
+        type: Number,
+        description: 'Mês da movimentação',
+        example: new Date().getMonth() + 1,
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Retorna uma recorrência convertida para movimentação com sucesso',
+        type: ResponseMovementDTO,
+    })
+    async toMovement(
+        @Request() req: CustomUserRequest,
+        @Param('id') id: string,
+        @Param('year') year: number,
+        @Param('month') month: number
+    ): Promise<ResponseMovementDTO> {
+        return await this.recurrenceService.toMovement(req.user.id, id, year, month)
     }
 
     @Get('/getAll')

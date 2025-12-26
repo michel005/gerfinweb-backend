@@ -42,7 +42,7 @@ async function bootstrap() {
                 const errorMap: Record<string, string> = {}
 
                 for (const error of errors) {
-                    if (error.constraints && error.constraints.hasOwnProperty.call('whitelistValidation')) {
+                    if (error.constraints && error.constraints.hasOwnProperty('whitelistValidation')) {
                         errorMap[error.property] = `O campo '${error.property}' não é permitido.`
                         continue
                     }

@@ -1,6 +1,8 @@
 export const ErrorCode = {
     GENERAL_MANDATORY_FIELD: 'Campo obrigatório!',
     GENERAL_INVALID_STRING_FIELD: 'String inválida!',
+    GENERAL_INVALID_BASE64_FIELD: 'Arquivo inválido!',
+    GENERAL_INVALID_BOOLEAN_FIELD: 'Boleano inválido!',
     GENERAL_INVALID_NUMBER_FIELD: 'Número inválido!',
     GENERAL_INVALID_ENUM_FIELD: 'Valor inválido!',
     GENERAL_INVALID_RGB_COLOR_FIELD: 'Cor inválida!',
