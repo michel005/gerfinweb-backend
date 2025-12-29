@@ -2,9 +2,8 @@ import { ApiProperty } from '@nestjs/swagger'
 import { IsEnum, IsOptional, IsString } from 'class-validator'
 import { BankAccountType } from '@/constant/BankAccountType'
 import { ErrorCode } from '@/constant/ErrorCode'
-import { PaginationDTO } from '@/dto/PaginationDTO'
 
-export class GetAllBankAccountDTO extends PaginationDTO {
+export class GetAllBankAccountDTO {
     @ApiProperty({
         description: 'Nome da conta bancária',
     })

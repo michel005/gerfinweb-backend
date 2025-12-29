@@ -41,6 +41,31 @@ export class Movement extends AbstractUserEntity {
     })
     value: number
 
+    status: string
+
+    calculateStatus(): 'LATE' | 'APPROVED_LATE' | 'APPROVED' | 'PENDENT' {
+        const dueDate = new Date(this.dueDate.toString().split('T')[0])
+        const today = new Date(new Date().toISOString().split('T')[0])
+        if (this.date) {
+            const date = new Date(this.date.toString().split('T')[0])
+            if (date.getTime() >= today.getTime()) {
+                if (date.getTime() <= dueDate.getTime()) {
+                    return 'APPROVED'
+                } else {
+                    return 'APPROVED_LATE'
+                }
+            } else {
+                return 'APPROVED_LATE'
+            }
+        } else {
+            if (dueDate.getTime() >= today.getTime()) {
+                return 'PENDENT'
+            } else {
+                return 'LATE'
+            }
+        }
+    }
+
     static fromDTO(dto: CreateMovementDTO | UpdateMovementDTO): Movement {
         const movement = new Movement()
         movement.date = dto.date
@@ -83,6 +108,7 @@ export class Movement extends AbstractUserEntity {
             value: this.value,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
+            status: this.calculateStatus(),
         }
     }
 }

@@ -219,6 +219,22 @@ class MovementService extends AbstractService {
         return movements.map((movement) => movement.toDTO())
     }
 
+    async pendentMovements(userId: string, month: number, year: number) {
+        const movements = await this.movementRepository
+            .createQueryBuilder('movement')
+            .leftJoinAndSelect('movement.originBankAccount', 'originBankAccount')
+            .leftJoinAndSelect('movement.destinationBankAccount', 'destinationBankAccount')
+            .leftJoinAndSelect('movement.category', 'category')
+            .where(
+                'movement.userId = :userId AND MONTH(movement.dueDate) = :month AND YEAR(movement.dueDate) = :year AND movement.date IS NULL',
+                { userId, month, year }
+            )
+            .orderBy('movement.createdAt', 'DESC')
+            .getMany()
+
+        return movements.map((movement) => movement.toDTO())
+    }
+
     async search(userId: string, search: string) {
         const response = await this.movementRepository
             .createQueryBuilder('movement')

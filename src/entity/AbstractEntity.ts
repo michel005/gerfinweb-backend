@@ -10,7 +10,13 @@ export abstract class AbstractEntity {
         description: 'Data de cadastro',
         example: '2023-01-01T00:00:00.000Z',
     })
-    @CreateDateColumn({ type: 'timestamp' })
+    @CreateDateColumn({
+        type: 'timestamp',
+        transformer: {
+            from: (value: string) => (value ? new Date(value) : undefined),
+            to: (value: Date) => value,
+        },
+    })
     createdAt: Date
 
     @ApiProperty({
@@ -19,6 +25,10 @@ export abstract class AbstractEntity {
     })
     @CreateDateColumn({
         type: 'timestamp',
+        transformer: {
+            from: (value: string) => (value ? new Date(value) : undefined),
+            to: (value: Date) => value,
+        },
     })
     updatedAt: Date
 

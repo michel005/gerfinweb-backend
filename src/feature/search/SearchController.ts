@@ -41,7 +41,7 @@ export class SearchController extends AbstractPrivateController {
         example: new Date().getMonth() + 1,
     })
     async dashboard(@Request() req: CustomUserRequest, @Param('year') year: number, @Param('month') month: number) {
-        const lastMovements = await this.movementService.lastMovements(req.user.id)
+        const lastMovements = await this.movementService.pendentMovements(req.user.id, month, year)
 
         return {
             ...(await this.searchService.dashboard(req.user.id, month, year)),

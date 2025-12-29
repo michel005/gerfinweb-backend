@@ -70,4 +70,10 @@ export class ResponseMovementDTO {
         example: 150.75,
     })
     value: number
+
+    @ApiProperty({
+        description: 'Status da movimentação',
+        enum: ['LATE', 'APPROVED_LATE', 'APPROVED', 'PENDENT'],
+    })
+    status?: 'LATE' | 'APPROVED_LATE' | 'APPROVED' | 'PENDENT'
 }

@@ -74,8 +74,6 @@ export class BankAccountService extends AbstractService {
         }
         const response = await this.bankAccountRepository.find({
             where: where,
-            skip: bankAccount.page * bankAccount.size,
-            take: bankAccount.size,
         })
         return {
             accounts: response.map((bankAccount) => bankAccount.toDTO()),
@@ -127,8 +125,6 @@ export class BankAccountService extends AbstractService {
             .setParameter('now', new Date().toISOString().split('T')[0])
             .setParameter('date', date)
             .groupBy('ba.id')
-            .skip(bankAccount.page * bankAccount.size)
-            .take(bankAccount.size)
 
         if (bankAccount.name) {
             queryBuilder.andWhere('ba.name = :name', { name: bankAccount.name })

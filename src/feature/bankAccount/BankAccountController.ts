@@ -93,26 +93,8 @@ export class BankAccountController extends AbstractPrivateController {
         enum: BankAccountTypeValues,
         description: 'Tipo da conta bancária',
     })
-    @ApiQuery({
-        name: 'page',
-        required: true,
-        type: Number,
-        description: 'Número da página',
-        default: 0,
-    })
-    @ApiQuery({
-        name: 'size',
-        required: true,
-        type: Number,
-        description: 'Quantidade de itens por página',
-        default: 10,
-    })
     async getAll(
         @Request() req: CustomUserRequest,
-        @Query('page')
-        page: GetAllBankAccountDTO['page'],
-        @Query('size')
-        size: GetAllBankAccountDTO['size'],
         @Query('name')
         name?: GetAllBankAccountDTO['name'],
         @Query('type')
@@ -121,8 +103,6 @@ export class BankAccountController extends AbstractPrivateController {
         return await this.bankAccountService.getAll(req.user.id, {
             name,
             type,
-            page,
-            size,
         })
     }
 
@@ -147,13 +127,6 @@ export class BankAccountController extends AbstractPrivateController {
         description: 'Tipo da conta bancária',
     })
     @ApiQuery({
-        name: 'page',
-        required: true,
-        type: Number,
-        description: 'Número da página',
-        default: 0,
-    })
-    @ApiQuery({
         name: 'date',
         required: true,
         type: String,
@@ -161,19 +134,8 @@ export class BankAccountController extends AbstractPrivateController {
         description: 'Data de referência para saldo atual e futuro',
         default: new Date().toISOString(),
     })
-    @ApiQuery({
-        name: 'size',
-        required: true,
-        type: Number,
-        description: 'Quantidade de itens por página',
-        default: 10,
-    })
     async getAllWithAmount(
         @Request() req: CustomUserRequest,
-        @Query('page')
-        page: GetAllBankAccountDTO['page'],
-        @Query('size')
-        size: GetAllBankAccountDTO['size'],
         @Query('date')
         date: Date,
         @Query('name')
@@ -186,8 +148,6 @@ export class BankAccountController extends AbstractPrivateController {
             {
                 name,
                 type,
-                page,
-                size,
             },
             date
         )
