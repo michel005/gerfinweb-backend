@@ -3,7 +3,7 @@ import { ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { PaginationDTO } from '@/dto/PaginationDTO'
 import { CustomUserRequest } from '@/type/CustomUserRequest'
 import { CreateRecurrenceDTO, ResponseRecurrenceDTO, ResponseRecurrenceListDTO, UpdateRecurrenceDTO } from './dto'
-import { ResponseMovementDTO } from '@/feature/movement/dto'
+import { RecurrencesMovementByMonthYearDTO, ResponseMovementDTO } from '@/feature/movement/dto'
 import { AbstractPrivateController } from '@/feature/AbstractPrivateController'
 
 @ApiTags('Recurrence')
@@ -109,36 +109,39 @@ export class RecurrenceController extends AbstractPrivateController {
         return await this.recurrenceService.toMovement(req.user.id, id, year, month)
     }
 
+    @Get('/getAllByMonthYear/:year/:month')
+    @ApiParam({
+        name: 'year',
+        required: true,
+        type: Number,
+        description: 'Ano da movimentação',
+        example: new Date().getFullYear(),
+    })
+    @ApiParam({
+        name: 'month',
+        required: true,
+        type: Number,
+        description: 'Mês da movimentação',
+        example: new Date().getMonth() + 1,
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Retorna uma lista de movimentações do mês/ano solicitado agrupados por recorrência com sucesso',
+    })
+    async getAllByMonthYear(
+        @Request() req: CustomUserRequest,
+        @Param('year') year: number,
+        @Param('month') month: number
+    ) {
+        return await this.recurrenceService.getAllByMonthYear(req.user.id, month, year)
+    }
+
     @Get('/getAll')
     @ApiResponse({
         status: 200,
-        description: 'Retorna uma lista de recorrências de acordo com o filtro informado',
-        type: ResponseRecurrenceListDTO,
+        description: 'Retorna uma lista de movimentações do mês/ano solicitado agrupados por recorrência com sucesso',
     })
-    @ApiQuery({
-        name: 'page',
-        required: true,
-        type: Number,
-        description: 'Número da página',
-        default: 0,
-    })
-    @ApiQuery({
-        name: 'size',
-        required: true,
-        type: Number,
-        description: 'Quantidade de itens por página',
-        default: 10,
-    })
-    async getAll(
-        @Request() req: CustomUserRequest,
-        @Query('page')
-        page: PaginationDTO['page'],
-        @Query('size')
-        size: PaginationDTO['size']
-    ): Promise<ResponseRecurrenceListDTO> {
-        return await this.recurrenceService.getAll(req.user.id, {
-            page,
-            size,
-        })
+    async getAll(@Request() req: CustomUserRequest) {
+        return await this.recurrenceService.getAll(req.user.id)
     }
 }

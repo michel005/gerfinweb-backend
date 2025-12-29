@@ -54,7 +54,7 @@ export class ResponseRecurrenceDTO {
         description: 'Conta bancária de origem da recorrência',
         required: true,
     })
-    originBankAccount: ResponseBankAccountDTO
+    originBankAccount?: ResponseBankAccountDTO
 
     @ApiProperty({
         description: 'Conta bancária de destino da recorrência',

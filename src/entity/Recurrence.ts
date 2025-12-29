@@ -17,20 +17,20 @@ export class Recurrence extends AbstractUserEntity {
 
     @ManyToOne(() => Category, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'categoryId' })
-    category: Category
+    category?: Category | null
 
     @Column({
         type: 'enum',
-        nullable: false,
+        nullable: true,
         enum: RecurrenceType,
     })
     type: RecurrenceType
 
-    @ManyToOne(() => BankAccount, { nullable: false })
-    originBankAccount: BankAccount
+    @ManyToOne(() => BankAccount, { nullable: true })
+    originBankAccount?: BankAccount | null
 
-    @ManyToOne(() => BankAccount, { nullable: false })
-    destinationBankAccount: BankAccount
+    @ManyToOne(() => BankAccount, { nullable: true })
+    destinationBankAccount?: BankAccount | null
 
     @Column({
         type: 'decimal',
@@ -48,15 +48,25 @@ export class Recurrence extends AbstractUserEntity {
         const recurrence = new Recurrence()
         recurrence.day = dto.day
         recurrence.description = dto.description
-        recurrence.category = new Category()
-        recurrence.category.id = dto.categoryId
+        if (dto.categoryId) {
+            recurrence.category = new Category()
+            recurrence.category.id = dto.categoryId
+        } else {
+            recurrence.category = null
+        }
         recurrence.type = dto.type
         recurrence.value = dto.value
-        recurrence.originBankAccount = new BankAccount()
-        recurrence.originBankAccount.id = dto.originBankAccountId
+        if (dto.originBankAccountId) {
+            recurrence.originBankAccount = new BankAccount()
+            recurrence.originBankAccount.id = dto.originBankAccountId
+        } else {
+            recurrence.originBankAccount = null
+        }
         if (dto.destinationBankAccountId) {
             recurrence.destinationBankAccount = new BankAccount()
             recurrence.destinationBankAccount.id = dto.destinationBankAccountId
+        } else {
+            recurrence.destinationBankAccount = null
         }
         return recurrence
     }
@@ -68,7 +78,7 @@ export class Recurrence extends AbstractUserEntity {
             description: this.description,
             category: this.category ? this.category.toDTO() : undefined,
             type: this.type,
-            originBankAccount: this.originBankAccount.toDTO(),
+            originBankAccount: this.originBankAccount ? this.originBankAccount.toDTO() : undefined,
             destinationBankAccount: this.destinationBankAccount ? this.destinationBankAccount.toDTO() : undefined,
             value: this.value,
             createdAt: this.createdAt,

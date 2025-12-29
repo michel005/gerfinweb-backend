@@ -104,6 +104,9 @@ class MovementService extends AbstractService {
             },
             relations: {
                 originBankAccount: true,
+                destinationBankAccount: true,
+                category: true,
+                recurrence: true,
             },
         })
         if (!movement) {
@@ -116,6 +119,7 @@ class MovementService extends AbstractService {
         const movements = await this.movementRepository
             .createQueryBuilder('movement')
             .leftJoinAndSelect('movement.category', 'category')
+            .leftJoinAndSelect('movement.recurrence', 'recurrence')
             .leftJoinAndSelect('movement.originBankAccount', 'originBankAccount')
             .leftJoinAndSelect('movement.destinationBankAccount', 'destinationBankAccount')
             .where('movement.userId = :userId', { userId })
@@ -133,6 +137,7 @@ class MovementService extends AbstractService {
         const movements = await this.movementRepository
             .createQueryBuilder('movement')
             .leftJoinAndSelect('movement.category', 'category')
+            .leftJoinAndSelect('movement.recurrence', 'recurrence')
             .leftJoinAndSelect('movement.originBankAccount', 'originBankAccount')
             .leftJoinAndSelect('movement.destinationBankAccount', 'destinationBankAccount')
             .where('movement.userId = :userId', { userId })

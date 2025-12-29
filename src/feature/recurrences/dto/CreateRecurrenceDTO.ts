@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEnum, IsNumber, IsString } from 'class-validator'
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator'
 import { ErrorCode } from '@/constant/ErrorCode'
 import { RecurrenceType } from '@/constant/RecurrenceType'
 
@@ -19,6 +19,7 @@ export class CreateRecurrenceDTO {
         example: 15,
         required: true,
     })
+    @IsOptional()
     @IsNumber(
         {},
         {
@@ -32,6 +33,7 @@ export class CreateRecurrenceDTO {
         example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
         required: true,
     })
+    @IsOptional()
     @IsString({
         message: ErrorCode.GENERAL_INVALID_STRING_FIELD,
     })
@@ -42,6 +44,7 @@ export class CreateRecurrenceDTO {
         example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
         required: false,
     })
+    @IsOptional()
     @IsString({
         message: ErrorCode.GENERAL_INVALID_STRING_FIELD,
     })
