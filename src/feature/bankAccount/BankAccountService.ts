@@ -5,6 +5,8 @@ import { UpdateBankAccountDTO } from './dto/UpdateBankAccountDTO'
 import { AmountBankAccountDTO } from '@/feature/bankAccount/dto/AmountBankAccountDTO'
 import { AbstractService } from '@/feature/AbstractService'
 import { AccountTypeDomain } from '@/type/AccountTypeDomain'
+import { parseISO } from 'date-fns'
+import { User } from '@/entity'
 
 @Injectable()
 export class BankAccountService extends AbstractService {
@@ -40,6 +42,30 @@ export class BankAccountService extends AbstractService {
         }
         const response = await this.bankAccountRepository.save(existingBankAccount)
         return response.toDTO()
+    }
+
+    async adjustCurrentAmount(userId: string, id: string, amount: number) {
+        const existingBankAccount = await this.bankAccountRepository.findOne({
+            where: {
+                id: id,
+                user: {
+                    id: userId,
+                },
+            },
+        })
+        if (!existingBankAccount) {
+            throw new BadRequestException('Conta bancária não encontrada')
+        }
+        const newMovement = this.movementRepository.create()
+        newMovement.date = parseISO(new Date().toISOString().split('T')[0])
+        newMovement.description = 'Ajuste de saldo'
+        newMovement.value = amount
+        newMovement.approved = true
+        newMovement.user = new User()
+        newMovement.user.id = userId
+
+        newMovement.originBankAccount = existingBankAccount
+        await this.movementRepository.save(newMovement)
     }
 
     async delete(userId: string, id: string) {
@@ -108,12 +134,12 @@ export class BankAccountService extends AbstractService {
             .leftJoin(
                 'Movement',
                 'm',
-                '(m.originBankAccountId = ba.id OR m.destinationBankAccount = ba.id) AND m.userId = :userId AND m.dueDate <= :date',
+                '(m.originBankAccountId = ba.id OR m.destinationBankAccount = ba.id) AND m.userId = :userId AND m.date <= :date',
                 { userId, date }
             )
             .select('ba')
             .addSelect(
-                'COALESCE(SUM(CASE WHEN m.date is not null AND (m.date <= :now OR m.dueDate <= :now) THEN CASE WHEN m.destinationBankAccount IS NOT NULL AND m.originBankAccountId = ba.id THEN (m.value * -1) ELSE m.value END ELSE 0 END), 0)',
+                'COALESCE(SUM(CASE WHEN m.date is not null AND m.date <= :now THEN CASE WHEN m.destinationBankAccount IS NOT NULL AND m.originBankAccountId = ba.id THEN (m.value * -1) ELSE m.value END ELSE 0 END), 0)',
                 'current'
             )
             .addSelect(

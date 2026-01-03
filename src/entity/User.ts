@@ -1,4 +1,4 @@
-import { CreateUserDTO, ResponseUserDTO, UpdateUserDTO } from '../feature/user/dto'
+import { CreateUserDTO, ResponseUserDTO, UpdateUserDTO } from '@/feature/user/dto'
 import { Column, Entity } from 'typeorm'
 import { AbstractEntity } from './AbstractEntity'
 

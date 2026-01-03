@@ -30,12 +30,6 @@ export class ResponseMovementDTO {
     date?: Date
 
     @ApiProperty({
-        description: 'Data de vencimento da movimentação',
-        example: '2024-07-05',
-    })
-    dueDate: Date
-
-    @ApiProperty({
         description: 'Descrição da movimentação',
         example: 'Pagamento de conta de luz',
     })
@@ -73,7 +67,14 @@ export class ResponseMovementDTO {
 
     @ApiProperty({
         description: 'Status da movimentação',
-        enum: ['LATE', 'APPROVED_LATE', 'APPROVED', 'PENDENT'],
+        enum: ['LATE', 'APPROVED', 'PENDENT'],
     })
-    status?: 'LATE' | 'APPROVED_LATE' | 'APPROVED' | 'PENDENT'
+    status?: 'LATE' | 'APPROVED' | 'PENDENT'
+
+    @ApiProperty({
+        description: 'Indica se a movimentação está aprovada',
+        example: false,
+        default: false,
+    })
+    approved: boolean
 }

@@ -145,7 +145,7 @@ export class RecurrenceService extends AbstractService {
         periods.forEach((p, index) => {
             const mKey = `month${index}`
             const yKey = `year${index}`
-            conditions.push(`(MONTH(movement.dueDate) = :${mKey} AND YEAR(movement.dueDate) = :${yKey})`)
+            conditions.push(`(MONTH(movement.date) = :${mKey} AND YEAR(movement.date) = :${yKey})`)
             parameters[mKey] = p.month
             parameters[yKey] = p.year
         })
@@ -160,8 +160,8 @@ export class RecurrenceService extends AbstractService {
                 parameters
             )
             .where('recurrence.userId = :userId', { userId })
-            .addSelect('MONTH(movement.dueDate)', 'movementMonth')
-            .addSelect('YEAR(movement.dueDate)', 'movementYear')
+            .addSelect('MONTH(movement.date)', 'movementMonth')
+            .addSelect('YEAR(movement.date)', 'movementYear')
             .addSelect('SUM(COALESCE(movement.value, 0))', 'totalAmount')
             .addSelect('COUNT(movement.id)', 'count')
             .groupBy('recurrence.id')
@@ -235,7 +235,7 @@ export class RecurrenceService extends AbstractService {
             throw new BadRequestException('Recorrência não encontrada')
         }
         return {
-            dueDate: new Date(year, month - 1, recurrence.day),
+            date: new Date(year, month - 1, recurrence.day),
             description: recurrence.description,
             value: recurrence.value,
             category: recurrence.category ? recurrence.category.toDTO() : undefined,
@@ -244,6 +244,7 @@ export class RecurrenceService extends AbstractService {
                 ? recurrence.destinationBankAccount.toDTO()
                 : undefined,
             recurrence: recurrence.toDTO(),
+            approved: false,
         }
     }
 }

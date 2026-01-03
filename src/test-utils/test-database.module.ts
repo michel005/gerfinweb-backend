@@ -1,7 +1,7 @@
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { BankAccount } from '../entity/BankAccount'
-import { Recurrence } from '../entity/Recurrence'
-import { User } from '../entity/User'
+import { BankAccount } from '@/entity'
+import { Recurrence } from '@/entity'
+import { User } from '@/entity'
 
 export const TestDatabaseModule = TypeOrmModule.forRoot({
     type: 'sqlite',

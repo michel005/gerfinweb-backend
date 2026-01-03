@@ -4,14 +4,19 @@ import { BankAccount } from './BankAccount'
 import { CreateMovementDTO, UpdateMovementDTO } from '@/feature/movement/dto'
 import { Recurrence } from '@/entity/Recurrence'
 import { Category } from '@/entity/Category'
+import { parseISO } from 'date-fns'
 
 @Entity('Movement')
 export class Movement extends AbstractUserEntity {
-    @Column({ type: 'date', nullable: true })
+    @Column({
+        type: 'date',
+        nullable: false,
+        transformer: {
+            to: (value: Date) => value,
+            from: (value: string) => new Date(value),
+        },
+    })
     date: Date
-
-    @Column({ type: 'date', nullable: false })
-    dueDate: Date
 
     @Column({ type: 'varchar', length: 255, nullable: false })
     description: string
@@ -41,37 +46,32 @@ export class Movement extends AbstractUserEntity {
     })
     value: number
 
+    @Column({ type: 'boolean', nullable: false, default: false })
+    approved: boolean
+
     status: string
 
-    calculateStatus(): 'LATE' | 'APPROVED_LATE' | 'APPROVED' | 'PENDENT' {
-        const dueDate = new Date(this.dueDate.toString().split('T')[0])
-        const today = new Date(new Date().toISOString().split('T')[0])
-        if (this.date) {
-            const date = new Date(this.date.toString().split('T')[0])
-            if (date.getTime() >= today.getTime()) {
-                if (date.getTime() <= dueDate.getTime()) {
-                    return 'APPROVED'
-                } else {
-                    return 'APPROVED_LATE'
-                }
-            } else {
-                return 'APPROVED_LATE'
-            }
+    calculateStatus(): 'LATE' | 'APPROVED' | 'PENDENT' {
+        const date = parseISO(this.date.toISOString().split('T')[0])
+        const today = parseISO(new Date().toISOString().split('T')[0])
+
+        console.log({ date, today, approved: this.approved })
+
+        if (this.approved) {
+            return 'APPROVED'
+        } else if (today.getTime() <= date.getTime()) {
+            return 'PENDENT'
         } else {
-            if (dueDate.getTime() >= today.getTime()) {
-                return 'PENDENT'
-            } else {
-                return 'LATE'
-            }
+            return 'LATE'
         }
     }
 
     static fromDTO(dto: CreateMovementDTO | UpdateMovementDTO): Movement {
         const movement = new Movement()
         movement.date = dto.date
-        movement.dueDate = dto.dueDate
         movement.description = dto.description
         movement.value = dto.value
+        movement.approved = dto.approved ?? false
         if (dto.categoryId) {
             movement.category = new Category()
             movement.category.id = dto.categoryId
@@ -99,13 +99,13 @@ export class Movement extends AbstractUserEntity {
         return {
             id: this.id,
             date: this.date,
-            dueDate: this.dueDate,
             description: this.description,
             category: this.category ? this.category.toDTO() : undefined,
             recurrence: this.recurrence ? this.recurrence.toDTO() : undefined,
             originBankAccount: this.originBankAccount ? this.originBankAccount.toDTO() : undefined,
             destinationBankAccount: this.destinationBankAccount ? this.destinationBankAccount.toDTO() : undefined,
             value: this.value,
+            approved: this.approved,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
             status: this.calculateStatus(),

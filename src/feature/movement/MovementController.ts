@@ -9,6 +9,7 @@ import {
 } from '@/feature/movement/dto'
 import { CustomUserRequest } from '@/type/CustomUserRequest'
 import { AbstractPrivateController } from '@/feature/AbstractPrivateController'
+import { AmountByDayOfMonthYear } from '@/feature/movement/dto/AmountByDayOfMonthYear'
 
 @ApiTags('Movement')
 @Controller('/movement')
@@ -57,6 +58,22 @@ export class MovementController extends AbstractPrivateController {
     })
     async approve(@Request() req: CustomUserRequest, @Param('id') id: string): Promise<ResponseMovementDTO> {
         return await this.movementService.approve(req.user.id, id)
+    }
+
+    @Patch('/:id/disapprove')
+    @ApiParam({
+        name: 'id',
+        required: true,
+        type: String,
+        description: 'ID da movimentação',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Desaprova uma movimentação com sucesso',
+        type: ResponseMovementDTO,
+    })
+    async disapprove(@Request() req: CustomUserRequest, @Param('id') id: string): Promise<ResponseMovementDTO> {
+        return await this.movementService.disapprove(req.user.id, id)
     }
 
     @Delete('/:id/delete')
@@ -145,5 +162,33 @@ export class MovementController extends AbstractPrivateController {
         @Param('month') month: number
     ): Promise<RecurrencesMovementByMonthYearDTO> {
         return await this.movementService.getByRecurrencesByMonthYear(req.user.id, month, year)
+    }
+
+    @Get('/amountByDayOfMonthYear/:year/:month')
+    @ApiParam({
+        name: 'year',
+        required: true,
+        type: Number,
+        description: 'Ano da movimentação',
+        example: new Date().getFullYear(),
+    })
+    @ApiParam({
+        name: 'month',
+        required: true,
+        type: Number,
+        description: 'Mês da movimentação',
+        example: new Date().getMonth() + 1,
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Retorna o saldo atual e futuro por dia do mês/ano solicitado com sucesso',
+        type: AmountByDayOfMonthYear,
+    })
+    async amountByDayOfMonthYear(
+        @Request() req: CustomUserRequest,
+        @Param('year') year: number,
+        @Param('month') month: number
+    ) {
+        return await this.movementService.amountByDayOfMonthYear(req.user.id, month, year)
     }
 }

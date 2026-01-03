@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsDateString, IsNumber, IsOptional, IsString } from 'class-validator'
+import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString } from 'class-validator'
 import { ErrorCode } from '@/constant/ErrorCode'
 
 export class CreateMovementDTO {
@@ -80,4 +80,14 @@ export class CreateMovementDTO {
         }
     )
     value: number
+
+    @ApiProperty({
+        description: 'Indica se a movimentação está aprovada',
+        example: false,
+        default: false,
+    })
+    @IsBoolean({
+        message: ErrorCode.GENERAL_INVALID_BOOLEAN_FIELD,
+    })
+    approved: boolean
 }

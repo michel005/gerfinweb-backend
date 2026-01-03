@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Request } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Request } from '@nestjs/common'
 import { ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { BankAccountTypeValues } from '@/constant/BankAccountType'
 import { CustomUserRequest } from '@/type/CustomUserRequest'
@@ -56,6 +56,32 @@ export class BankAccountController extends AbstractPrivateController {
     })
     async delete(@Request() req: CustomUserRequest, @Param('id') id: string): Promise<void> {
         await this.bankAccountService.delete(req.user.id, id)
+    }
+
+    @Patch('/:id/adjustCurrentAmount')
+    @ApiParam({
+        name: 'id',
+        required: true,
+        type: String,
+        description: 'ID da conta bancária',
+    })
+    @ApiParam({
+        name: 'amount',
+        required: true,
+        type: Number,
+        description: 'Valor para ajuste do saldo atual da conta bancária',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Atualiza o saldo atual da conta bancária com sucesso',
+        type: ResponseBankAccountDTO,
+    })
+    async adjustCurrentAmount(
+        @Request() req: CustomUserRequest,
+        @Param('id') id: string,
+        @Param('id') amount: number
+    ): Promise<void> {
+        await this.bankAccountService.adjustCurrentAmount(req.user.id, id, amount)
     }
 
     @Get('/:id/detail')

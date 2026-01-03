@@ -6,6 +6,8 @@ import { ResponseRecurrenceDTO } from '@/feature/recurrences/dto'
 import { Category } from '@/entity/Category'
 import { AbstractService } from '@/feature/AbstractService'
 import { Recurrence } from '@/entity'
+import { AmountByDayOfMonthYear } from '@/feature/movement/dto/AmountByDayOfMonthYear'
+import { parseISO } from 'date-fns'
 
 @Injectable()
 class MovementService extends AbstractService {
@@ -36,10 +38,10 @@ class MovementService extends AbstractService {
         }
         existingMovement.description = movement.description
         existingMovement.date = movement.date
-        existingMovement.dueDate = movement.dueDate
         existingMovement.value = movement.value
         existingMovement.originBankAccount = new BankAccount()
         existingMovement.originBankAccount.id = movement.originBankAccountId
+        existingMovement.approved = movement.approved
         if (movement.categoryId) {
             existingMovement.category = new Category()
             existingMovement.category.id = movement.categoryId
@@ -74,7 +76,38 @@ class MovementService extends AbstractService {
         if (!existingMovement) {
             throw new BadRequestException('Movimentação não encontrada')
         }
-        existingMovement.date = new Date()
+        existingMovement.approved = true
+        existingMovement.date = parseISO(new Date().toISOString().split('T')[0])
+        const response = await this.movementRepository.save(existingMovement)
+        return response.toDTO()
+    }
+
+    async disapprove(userId: string, id: string) {
+        const existingMovement = await this.movementRepository.findOne({
+            where: {
+                id: id,
+                user: {
+                    id: userId,
+                },
+            },
+            relations: {
+                originBankAccount: true,
+                destinationBankAccount: true,
+                category: true,
+                recurrence: true,
+            },
+        })
+        if (!existingMovement) {
+            throw new BadRequestException('Movimentação não encontrada')
+        }
+        if (existingMovement.recurrence?.day) {
+            const templateDay = existingMovement.recurrence?.day
+            console.log(existingMovement.date)
+            existingMovement.date = parseISO(
+                `${existingMovement.date.getFullYear()}-${(existingMovement.date.getMonth() + 1).toString().padStart(2, '0')}-${templateDay.toString().padStart(2, '0')}`
+            )
+        }
+        existingMovement.approved = false
         const response = await this.movementRepository.save(existingMovement)
         return response.toDTO()
     }
@@ -123,8 +156,8 @@ class MovementService extends AbstractService {
             .leftJoinAndSelect('movement.originBankAccount', 'originBankAccount')
             .leftJoinAndSelect('movement.destinationBankAccount', 'destinationBankAccount')
             .where('movement.userId = :userId', { userId })
-            .andWhere('EXTRACT(MONTH FROM movement.dueDate) = :month', { month })
-            .andWhere('EXTRACT(YEAR FROM movement.dueDate) = :year', { year })
+            .andWhere('EXTRACT(MONTH FROM movement.date) = :month', { month })
+            .andWhere('EXTRACT(YEAR FROM movement.date) = :year', { year })
             .getMany()
 
         return {
@@ -141,8 +174,8 @@ class MovementService extends AbstractService {
             .leftJoinAndSelect('movement.originBankAccount', 'originBankAccount')
             .leftJoinAndSelect('movement.destinationBankAccount', 'destinationBankAccount')
             .where('movement.userId = :userId', { userId })
-            .andWhere('EXTRACT(MONTH FROM movement.dueDate) = :month', { month })
-            .andWhere('EXTRACT(YEAR FROM movement.dueDate) = :year', { year })
+            .andWhere('EXTRACT(MONTH FROM movement.date) = :month', { month })
+            .andWhere('EXTRACT(YEAR FROM movement.date) = :year', { year })
             .getMany()
 
         const recurrences = await this.recurrenceRepository.find({
@@ -214,6 +247,7 @@ class MovementService extends AbstractService {
             .where('movement.userId = :userId', { userId })
             .orderBy('movement.createdAt', 'DESC')
             .limit(limit)
+            .orderBy('movement.createdAt', 'ASC')
             .getMany()
 
         return movements.map((movement) => movement.toDTO())
@@ -226,10 +260,10 @@ class MovementService extends AbstractService {
             .leftJoinAndSelect('movement.destinationBankAccount', 'destinationBankAccount')
             .leftJoinAndSelect('movement.category', 'category')
             .where(
-                'movement.userId = :userId AND MONTH(movement.dueDate) = :month AND YEAR(movement.dueDate) = :year AND movement.date IS NULL',
+                'movement.userId = :userId AND MONTH(movement.date) = :month AND YEAR(movement.date) = :year AND movement.approved = false',
                 { userId, month, year }
             )
-            .orderBy('movement.createdAt', 'DESC')
+            .orderBy('movement.value', 'ASC')
             .getMany()
 
         return movements.map((movement) => movement.toDTO())
@@ -244,6 +278,72 @@ class MovementService extends AbstractService {
             .where('movement.description LIKE :search AND movement.userId = :userId', { search: `%${search}%`, userId })
             .getMany()
         return response.map((x) => x.toDTO())
+    }
+
+    async amountByDayOfMonthYear(userId: string, month: number, year: number): Promise<AmountByDayOfMonthYear> {
+        const response = await this.movementRepository
+            .createQueryBuilder('movement')
+            .where('movement.userId = :userId', { userId })
+            .andWhere('EXTRACT(MONTH FROM movement.date) = :month', { month })
+            .andWhere('EXTRACT(YEAR FROM movement.date) = :year', { year })
+            .select('EXTRACT(DAY FROM movement.date)', 'day')
+            .addSelect('SUM(CASE WHEN movement.approved THEN movement.value ELSE 0 END)', 'current')
+            .addSelect('SUM(movement.value)', 'future')
+            .groupBy('day')
+            .orderBy('day', 'ASC')
+            .getRawMany()
+        const allDaysInMonth = new Date(year, month, 0).getDate()
+        for (let day = 1; day <= allDaysInMonth; day++) {
+            if (!response.find((r) => Number(r.day) === day)) {
+                response.push({ day: day, current: 0, future: 0 })
+            } else {
+                const dayRecord = response.find((r) => Number(r.day) === day)
+                if (dayRecord) {
+                    dayRecord.current = Number(dayRecord.current)
+                    dayRecord.future = Number(dayRecord.future)
+                }
+            }
+        }
+        const finalResponse = response.sort((a, b) => Number(a.day) - Number(b.day))
+        let currentSum = 0
+        let futureSum = 0
+        let max = Number.NEGATIVE_INFINITY
+        let min = Number.POSITIVE_INFINITY
+        for (const record of finalResponse) {
+            currentSum += Number(record.current)
+            futureSum += Number(record.future)
+            if (currentSum > max) {
+                max = currentSum
+            }
+            if (futureSum > max) {
+                max = futureSum
+            }
+            if (currentSum < min) {
+                min = currentSum
+            }
+            if (futureSum < min) {
+                min = futureSum
+            }
+            record.current = currentSum
+            record.future = futureSum
+        }
+
+        return {
+            month,
+            year,
+            max: max === Number.NEGATIVE_INFINITY ? 0 : max,
+            min: min === Number.POSITIVE_INFINITY ? 0 : min,
+            days: finalResponse.reduce(
+                (acc, curr) => {
+                    acc[Number(curr.day)] = {
+                        current: Number(curr.current),
+                        future: Number(curr.future),
+                    }
+                    return acc
+                },
+                {} as Record<number, { current: number; future: number }>
+            ),
+        }
     }
 }
 

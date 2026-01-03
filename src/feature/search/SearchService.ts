@@ -7,11 +7,11 @@ export class SearchService extends AbstractService {
             .leftJoin(
                 'Movement',
                 'm',
-                '(m.originBankAccountId = ba.id OR m.destinationBankAccount = ba.id) AND m.userId = :userId AND m.dueDate <= :date',
+                '(m.originBankAccountId = ba.id OR m.destinationBankAccount = ba.id) AND m.userId = :userId AND m.date <= :date',
                 { userId, date: new Date(year, month, 0) }
             )
             .select(
-                'COALESCE(SUM(CASE WHEN m.date is not null AND (m.date <= :now OR m.dueDate <= :now) THEN CASE WHEN m.destinationBankAccount IS NOT NULL AND m.originBankAccountId = ba.id THEN (m.value * -1) ELSE m.value END ELSE 0 END), 0)',
+                'COALESCE(SUM(CASE WHEN m.approved AND m.date <= :now THEN CASE WHEN m.destinationBankAccount IS NOT NULL AND m.originBankAccountId = ba.id THEN (m.value * -1) ELSE m.value END ELSE 0 END), 0)',
                 'totalCurrent'
             )
             .addSelect(
