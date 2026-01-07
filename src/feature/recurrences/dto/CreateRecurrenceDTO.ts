@@ -37,7 +37,7 @@ export class CreateRecurrenceDTO {
     @IsString({
         message: ErrorCode.GENERAL_INVALID_STRING_FIELD,
     })
-    originBankAccountId: string
+    originBankAccountId?: string
 
     @ApiProperty({
         description: 'ID da conta bancária de destino da recorrência',
@@ -54,11 +54,12 @@ export class CreateRecurrenceDTO {
         description: 'ID da categoria associada à recorrência',
         example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     })
+    @IsOptional()
     @IsString({
         each: true,
         message: ErrorCode.GENERAL_INVALID_STRING_FIELD,
     })
-    categoryId: string
+    categoryId?: string
 
     @ApiProperty({
         description: 'Tipo da recorrência',

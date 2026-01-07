@@ -15,19 +15,19 @@ export class ResponseMovementDTO {
         description: 'Data de criação do usuário',
         example: '2023-01-01T00:00:00.000Z',
     })
-    createdAt?: Date
+    createdAt?: string
 
     @ApiProperty({
         description: 'Data de atualização do usuário',
         example: '2023-01-01T00:00:00.000Z',
     })
-    updatedAt?: Date
+    updatedAt?: string
 
     @ApiProperty({
         description: 'Data da movimentação',
         example: '2024-06-30',
     })
-    date?: Date
+    date?: string
 
     @ApiProperty({
         description: 'Descrição da movimentação',

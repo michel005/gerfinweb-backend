@@ -1,10 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Request } from '@nestjs/common'
-import { ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
-import { PaginationDTO } from '@/dto/PaginationDTO'
-import { CustomUserRequest } from '@/type/CustomUserRequest'
-import { CreateRecurrenceDTO, ResponseRecurrenceDTO, ResponseRecurrenceListDTO, UpdateRecurrenceDTO } from './dto'
-import { RecurrencesMovementByMonthYearDTO, ResponseMovementDTO } from '@/feature/movement/dto'
 import { AbstractPrivateController } from '@/feature/AbstractPrivateController'
+import { ResponseMovementDTO } from '@/feature/movement/dto'
+import { CustomUserRequest } from '@/type/CustomUserRequest'
+import { Body, Controller, Delete, Get, Param, Post, Put, Request } from '@nestjs/common'
+import { ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { CreateRecurrenceDTO, ResponseRecurrenceDTO, UpdateRecurrenceDTO } from './dto'
+import { CreateBatchRecurrenceDTO } from './dto/CreateBatchRecurrenceDTO'
 
 @ApiTags('Recurrence')
 @Controller('/recurrence')
@@ -20,6 +20,15 @@ export class RecurrenceController extends AbstractPrivateController {
         @Body() recurrence: CreateRecurrenceDTO
     ): Promise<ResponseRecurrenceDTO> {
         return await this.recurrenceService.create(req.user.id, recurrence)
+    }
+
+    @Post('/createBatch')
+    @ApiResponse({
+        status: 200,
+        description: 'Cadastra várias recorrências com sucesso',
+    })
+    async createBatch(@Request() req: CustomUserRequest, @Body() recurrence: CreateBatchRecurrenceDTO): Promise<void> {
+        return await this.recurrenceService.createBatch(req.user.id, recurrence)
     }
 
     @Put('/:id/update')

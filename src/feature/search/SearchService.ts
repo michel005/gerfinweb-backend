@@ -58,7 +58,7 @@ export class SearchService extends AbstractService {
             totalAmount: Number(queryBuilder.totalCurrent),
             amountByCategories: entities.map((x, index) => ({
                 ...x,
-                amount: raw[index].category_totalBalance,
+                amount: Number(raw[index].category_totalBalance),
             })),
             maxAmountByCategories: Math.max(...raw.map((x) => Number(x.category_totalBalance))),
             minAmountByCategories: Math.min(...raw.map((x) => Number(x.category_totalBalance))),

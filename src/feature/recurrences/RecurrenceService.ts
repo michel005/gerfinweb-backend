@@ -6,6 +6,7 @@ import { ResponseMovementDTO } from '@/feature/movement/dto'
 import { Category } from '@/entity/Category'
 import { AbstractService } from '@/feature/AbstractService'
 import { Movement } from '@/entity'
+import { CreateBatchRecurrenceDTO } from './dto/CreateBatchRecurrenceDTO'
 
 function getMonthRange(month: number, year: number) {
     const offsets = [-1, 0, 1, 2]
@@ -49,6 +50,27 @@ export class RecurrenceService extends AbstractService {
         await temp.beforeInsert()
         const response = await this.recurrenceRepository.save(temp)
         return response.toDTO()
+    }
+
+    async createBatch(userId: string, recurrence: CreateBatchRecurrenceDTO): Promise<void> {
+        for (const rec of recurrence.recurrences) {
+            const newRecurrence = Recurrence.fromDTO({
+                ...rec,
+                day: recurrence.day,
+                type: recurrence.type,
+                originBankAccountId: recurrence.originBankAccountId,
+            })
+
+            await newRecurrence.beforeInsert()
+            const temp = this.recurrenceRepository.create({
+                ...newRecurrence,
+                user: {
+                    id: userId,
+                },
+            })
+            await temp.beforeInsert()
+            await this.recurrenceRepository.save(temp)
+        }
     }
 
     async update(userId: string, id: string, recurrence: UpdateRecurrenceDTO): Promise<ResponseRecurrenceDTO> {
@@ -164,6 +186,7 @@ export class RecurrenceService extends AbstractService {
             .addSelect('YEAR(movement.date)', 'movementYear')
             .addSelect('SUM(COALESCE(movement.value, 0))', 'totalAmount')
             .addSelect('COUNT(movement.id)', 'count')
+            .addSelect('SUM(case when movement.approved = false then 1 else 0 end)', 'countPendent')
             .groupBy('recurrence.id')
             .addGroupBy('movementMonth')
             .addGroupBy('movementYear')
@@ -178,6 +201,7 @@ export class RecurrenceService extends AbstractService {
                     year: parseInt(r.movementYear),
                     totalAmount: parseFloat(r.totalAmount || '0'),
                     count: Number(r.count || '0'),
+                    countPendent: Number(r.countPendent || '0'),
                 }))
 
             const monthlyBalances = periods.map((p) => {
@@ -187,6 +211,7 @@ export class RecurrenceService extends AbstractService {
                     year: p.year,
                     totalAmount: found ? found.totalAmount : 0,
                     count: found ? Number(found.count || '0') : 0,
+                    countPendent: found ? Number(found.countPendent || '0') : 0,
                 }
             })
 
@@ -235,7 +260,7 @@ export class RecurrenceService extends AbstractService {
             throw new BadRequestException('Recorrência não encontrada')
         }
         return {
-            date: new Date(year, month - 1, recurrence.day),
+            date: new Date(year, month - 1, recurrence.day).toISOString().split('T')[0],
             description: recurrence.description,
             value: recurrence.value,
             category: recurrence.category ? recurrence.category.toDTO() : undefined,

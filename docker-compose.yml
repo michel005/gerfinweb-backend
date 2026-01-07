@@ -38,9 +38,10 @@ services:
             - local
         command: --default-authentication-plugin=mysql_native_password
 
-volumes:
-    mysql_data: {}
-
 networks:
     local:
         driver: bridge
+
+volumes:
+    mysql_data:
+        driver: local

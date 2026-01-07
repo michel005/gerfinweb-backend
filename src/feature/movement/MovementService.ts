@@ -77,7 +77,7 @@ class MovementService extends AbstractService {
             throw new BadRequestException('Movimentação não encontrada')
         }
         existingMovement.approved = true
-        existingMovement.date = parseISO(new Date().toISOString().split('T')[0])
+        existingMovement.date = new Date().toISOString().split('T')[0]
         const response = await this.movementRepository.save(existingMovement)
         return response.toDTO()
     }
@@ -102,10 +102,7 @@ class MovementService extends AbstractService {
         }
         if (existingMovement.recurrence?.day) {
             const templateDay = existingMovement.recurrence?.day
-            console.log(existingMovement.date)
-            existingMovement.date = parseISO(
-                `${existingMovement.date.getFullYear()}-${(existingMovement.date.getMonth() + 1).toString().padStart(2, '0')}-${templateDay.toString().padStart(2, '0')}`
-            )
+            existingMovement.date = `${parseISO(existingMovement.date).getFullYear()}-${(parseISO(existingMovement.date).getMonth() + 1).toString().padStart(2, '0')}-${templateDay.toString().padStart(2, '0')}`
         }
         existingMovement.approved = false
         const response = await this.movementRepository.save(existingMovement)
@@ -263,7 +260,8 @@ class MovementService extends AbstractService {
                 'movement.userId = :userId AND MONTH(movement.date) = :month AND YEAR(movement.date) = :year AND movement.approved = false',
                 { userId, month, year }
             )
-            .orderBy('movement.value', 'ASC')
+            .orderBy('movement.date', 'DESC')
+            .addOrderBy('movement.value', 'ASC')
             .getMany()
 
         return movements.map((movement) => movement.toDTO())
@@ -281,6 +279,28 @@ class MovementService extends AbstractService {
     }
 
     async amountByDayOfMonthYear(userId: string, month: number, year: number): Promise<AmountByDayOfMonthYear> {
+        const queryBuilder = await this.bankAccountRepository
+            .createQueryBuilder('ba')
+            .leftJoin(
+                'Movement',
+                'm',
+                '(m.originBankAccountId = ba.id OR m.destinationBankAccount = ba.id) AND m.userId = :userId AND m.date <= :date',
+                { userId, date: new Date(year, month - 1, 1) }
+            )
+            .select(
+                'COALESCE(SUM(CASE WHEN m.approved AND m.date <= :now THEN CASE WHEN m.destinationBankAccount IS NOT NULL AND m.originBankAccountId = ba.id THEN (m.value * -1) ELSE m.value END ELSE 0 END), 0)',
+                'totalCurrent'
+            )
+            .addSelect(
+                'COALESCE(SUM(CASE WHEN m.destinationBankAccount IS NOT NULL AND m.originBankAccountId = ba.id THEN (m.value * -1) ELSE m.value END), 0)',
+                'totalFuture'
+            )
+            .where('ba.userId = :userId', { userId })
+            .andWhere('ba.active = :active', { active: true })
+            .setParameter('now', new Date().toISOString().split('T')[0])
+            .setParameter('dueDate', new Date(year, month - 1, 1))
+            .getRawOne()
+
         const response = await this.movementRepository
             .createQueryBuilder('movement')
             .where('movement.userId = :userId', { userId })
@@ -305,8 +325,8 @@ class MovementService extends AbstractService {
             }
         }
         const finalResponse = response.sort((a, b) => Number(a.day) - Number(b.day))
-        let currentSum = 0
-        let futureSum = 0
+        let currentSum = Number(queryBuilder.totalCurrent)
+        let futureSum = Number(queryBuilder.totalFuture)
         let max = Number.NEGATIVE_INFINITY
         let min = Number.POSITIVE_INFINITY
         for (const record of finalResponse) {

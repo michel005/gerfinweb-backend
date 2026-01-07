@@ -65,7 +65,7 @@ export class BankAccountController extends AbstractPrivateController {
         type: String,
         description: 'ID da conta bancária',
     })
-    @ApiParam({
+    @ApiQuery({
         name: 'amount',
         required: true,
         type: Number,
@@ -79,7 +79,7 @@ export class BankAccountController extends AbstractPrivateController {
     async adjustCurrentAmount(
         @Request() req: CustomUserRequest,
         @Param('id') id: string,
-        @Param('id') amount: number
+        @Query('amount') amount: number
     ): Promise<void> {
         await this.bankAccountService.adjustCurrentAmount(req.user.id, id, amount)
     }

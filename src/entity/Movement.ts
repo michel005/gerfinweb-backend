@@ -5,18 +5,16 @@ import { CreateMovementDTO, UpdateMovementDTO } from '@/feature/movement/dto'
 import { Recurrence } from '@/entity/Recurrence'
 import { Category } from '@/entity/Category'
 import { parseISO } from 'date-fns'
+import { ParseDateToDateString as parseDateToDateString } from '@/urils/parseDateToDateString'
+import { ParseDateToDateTimeString as parseDateToDateTimeString } from '@/urils/parseDateToDateTimeString'
 
 @Entity('Movement')
 export class Movement extends AbstractUserEntity {
     @Column({
         type: 'date',
         nullable: false,
-        transformer: {
-            to: (value: Date) => value,
-            from: (value: string) => new Date(value),
-        },
     })
-    date: Date
+    date: string
 
     @Column({ type: 'varchar', length: 255, nullable: false })
     description: string
@@ -52,10 +50,8 @@ export class Movement extends AbstractUserEntity {
     status: string
 
     calculateStatus(): 'LATE' | 'APPROVED' | 'PENDENT' {
-        const date = parseISO(this.date.toISOString().split('T')[0])
+        const date = parseISO(new Date(this.date).toISOString().split('T')[0])
         const today = parseISO(new Date().toISOString().split('T')[0])
-
-        console.log({ date, today, approved: this.approved })
 
         if (this.approved) {
             return 'APPROVED'
@@ -98,7 +94,7 @@ export class Movement extends AbstractUserEntity {
     toDTO() {
         return {
             id: this.id,
-            date: this.date,
+            date: parseDateToDateString(this.date),
             description: this.description,
             category: this.category ? this.category.toDTO() : undefined,
             recurrence: this.recurrence ? this.recurrence.toDTO() : undefined,
@@ -106,8 +102,8 @@ export class Movement extends AbstractUserEntity {
             destinationBankAccount: this.destinationBankAccount ? this.destinationBankAccount.toDTO() : undefined,
             value: this.value,
             approved: this.approved,
-            createdAt: this.createdAt,
-            updatedAt: this.updatedAt,
+            createdAt: parseDateToDateTimeString(this.createdAt),
+            updatedAt: parseDateToDateTimeString(this.updatedAt),
             status: this.calculateStatus(),
         }
     }

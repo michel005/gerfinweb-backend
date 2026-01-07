@@ -45,26 +45,41 @@ export class BankAccountService extends AbstractService {
     }
 
     async adjustCurrentAmount(userId: string, id: string, amount: number) {
-        const existingBankAccount = await this.bankAccountRepository.findOne({
+        const existingBankAccount = await this.detail(userId, id)
+        if (!existingBankAccount) {
+            throw new BadRequestException('Conta bancária não encontrada')
+        }
+        let category = await this.categoryRepository.findOne({
             where: {
-                id: id,
+                name: 'Ajuste de Saldo',
                 user: {
                     id: userId,
                 },
             },
         })
-        if (!existingBankAccount) {
-            throw new BadRequestException('Conta bancária não encontrada')
+        if (!category) {
+            category = this.categoryRepository.create()
+            category.name = 'Ajuste de Saldo'
+            category.description = 'Ajustes de saldo da conta bancária'
+            category.color = '#808080'
+            category.icon = 'account_balance'
+            category.user = new User()
+            category.user.id = userId
+            await category.beforeInsert()
+            category = await this.categoryRepository.save(category)
         }
+
         const newMovement = this.movementRepository.create()
-        newMovement.date = parseISO(new Date().toISOString().split('T')[0])
+        newMovement.date = new Date().toISOString().split('T')[0]
         newMovement.description = 'Ajuste de saldo'
-        newMovement.value = amount
+        newMovement.value = amount - existingBankAccount.current
         newMovement.approved = true
+        newMovement.category = category
         newMovement.user = new User()
         newMovement.user.id = userId
 
-        newMovement.originBankAccount = existingBankAccount
+        newMovement.originBankAccount = new BankAccount()
+        newMovement.originBankAccount.id = existingBankAccount.id
         await this.movementRepository.save(newMovement)
     }
 
@@ -139,7 +154,7 @@ export class BankAccountService extends AbstractService {
             )
             .select('ba')
             .addSelect(
-                'COALESCE(SUM(CASE WHEN m.date is not null AND m.date <= :now THEN CASE WHEN m.destinationBankAccount IS NOT NULL AND m.originBankAccountId = ba.id THEN (m.value * -1) ELSE m.value END ELSE 0 END), 0)',
+                'COALESCE(SUM(CASE WHEN m.date <= :now AND m.approved THEN CASE WHEN m.destinationBankAccount IS NOT NULL AND m.originBankAccountId = ba.id THEN (m.value * -1) ELSE m.value END ELSE 0 END), 0)',
                 'current'
             )
             .addSelect(
@@ -172,20 +187,38 @@ export class BankAccountService extends AbstractService {
         }
     }
 
-    async detail(userId: string, id: string): Promise<ResponseBankAccountDTO> {
-        const bankAccount = await this.bankAccountRepository.findOne({
-            where: {
-                id: id,
-                user: {
-                    id: userId,
-                },
-                active: true,
-            },
-        })
+    async detail(userId: string, id: string) {
+        const bankAccount = await this.bankAccountRepository
+            .createQueryBuilder('ba')
+            .leftJoin(
+                'Movement',
+                'm',
+                '(m.originBankAccountId = ba.id OR m.destinationBankAccount = ba.id) AND m.userId = :userId AND m.date <= :date',
+                { userId, date: parseISO(new Date().toISOString().split('T')[0]) }
+            )
+            .select('ba')
+            .addSelect(
+                'COALESCE(SUM(CASE WHEN m.date <= :now AND m.approved THEN CASE WHEN m.destinationBankAccount IS NOT NULL AND m.originBankAccountId = ba.id THEN (m.value * -1) ELSE m.value END ELSE 0 END), 0)',
+                'current'
+            )
+            .addSelect(
+                'COALESCE(SUM(CASE WHEN m.destinationBankAccount IS NOT NULL AND m.originBankAccountId = ba.id THEN (m.value * -1) ELSE m.value END), 0)',
+                'future'
+            )
+            .where('ba.userId = :userId AND ba.id = :id', {
+                userId,
+                id,
+                now: parseISO(new Date().toISOString().split('T')[0]),
+            })
+            .getRawAndEntities()
         if (!bankAccount) {
             throw new BadRequestException('Conta bancária não encontrada')
         }
-        return bankAccount.toDTO()
+        return {
+            ...bankAccount.entities[0].toDTO(),
+            current: Number(bankAccount.raw[0].current),
+            future: Number(bankAccount.raw[0].future),
+        }
     }
 
     async search(userId: string, search: string) {

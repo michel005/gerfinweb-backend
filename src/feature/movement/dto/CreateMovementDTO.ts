@@ -9,15 +9,7 @@ export class CreateMovementDTO {
     })
     @IsOptional()
     @IsDateString({}, { message: ErrorCode.GENERAL_INVALID_DATE_FIELD })
-    date: Date
-
-    @ApiProperty({
-        description: 'Data de vencimento da movimentação',
-        example: '2024-07-05',
-    })
-    @IsOptional()
-    @IsDateString({}, { message: ErrorCode.GENERAL_INVALID_DATE_FIELD })
-    dueDate: Date
+    date: string
 
     @ApiProperty({
         description: 'Descrição da movimentação',
