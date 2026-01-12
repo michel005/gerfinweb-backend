@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common'
-import { JwtModule } from '@nestjs/jwt'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { JwtModule, JwtModuleOptions } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
-import { TypeOrmModule } from '@nestjs/typeorm'
-import * as process from 'node:process'
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm'
 import { AuthService } from './authentication/AuthService'
 import { JwtStrategy } from './authentication/JwtStrategy'
 import { BankAccountController } from './feature/bankAccount/BankAccountController'
@@ -21,21 +21,36 @@ import { SearchService } from '@/feature/search/SearchService'
 
 @Module({
     imports: [
-        PassportModule,
-        JwtModule.register({
-            secret: 'TokenSuperSeguro@2025',
-            signOptions: { expiresIn: '7d' },
+        ConfigModule.forRoot({
+            isGlobal: true,
+            envFilePath: '.env',
         }),
-        TypeOrmModule.forRoot({
-            type: 'mysql',
-            host: process.env.MYSQL_HOST || 'localhost',
-            port: parseInt(process.env.MYSQL_PORT || '3306'),
-            username: process.env.MYSQL_USER || 'root',
-            password: process.env.MYSQL_PASSWORD || '123456',
-            database: process.env.MYSQL_DATABASE || 'gerfinweb',
-            entities: Object.values(Entities),
-            synchronize: process.env.NODE_ENV !== 'production',
-            logging: true,
+        PassportModule,
+        JwtModule.registerAsync({
+            global: true,
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService): JwtModuleOptions => ({
+                secret: configService.get<string>('JWT_SECRET') || 'TokenSuperSeguro@2025',
+                signOptions: { expiresIn: (configService.get<string>('JWT_EXPIRES_IN') as any) || '7d' },
+            }),
+        }),
+        TypeOrmModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
+                type: 'mysql',
+                host: configService.get<string>('MYSQL_HOST') || 'localhost',
+                port: configService.get<number>('MYSQL_PORT') || 3306,
+                username: configService.get<string>('MYSQL_USER') || 'root',
+                password: configService.get<string>('MYSQL_PASSWORD') || '123456',
+                database: configService.get<string>('MYSQL_DATABASE') || 'gerfinweb',
+                entities: Object.values(Entities),
+                synchronize: configService.get<string>('NODE_ENV') !== 'production',
+                logging: configService.get<string>('NODE_ENV') === 'development',
+                retryAttempts: 10,
+                retryDelay: 5000,
+            }),
         }),
         TypeOrmModule.forFeature(Object.values(Entities)),
     ],
