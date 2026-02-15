@@ -9,7 +9,7 @@ import { Movement } from '@/entity'
 import { CreateBatchRecurrenceDTO } from './dto/CreateBatchRecurrenceDTO'
 
 function getMonthRange(month: number, year: number) {
-    const offsets = [-1, 0, 1, 2]
+    const offsets = [-1, 0, 1]
 
     return offsets.map((offset) => {
         const date = new Date(year, month - 1 + offset)

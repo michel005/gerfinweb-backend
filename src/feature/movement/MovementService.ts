@@ -8,6 +8,7 @@ import { AbstractService } from '@/feature/AbstractService'
 import { Recurrence } from '@/entity'
 import { AmountByDayOfMonthYear } from '@/feature/movement/dto/AmountByDayOfMonthYear'
 import { parseISO } from 'date-fns'
+import { ResponseGetByCategoryIdAndYear } from '@/feature/movement/dto/ResponseGetByCategoryIdAndYear'
 
 @Injectable()
 class MovementService extends AbstractService {
@@ -158,6 +159,32 @@ class MovementService extends AbstractService {
             .getMany()
 
         return {
+            movements: movements.map((movement) => movement.toDTO()),
+            total: movements.length,
+        }
+    }
+
+    async getAllByCategoryIdAndYear(
+        userId: string,
+        categoryId: string,
+        year: number
+    ): Promise<ResponseGetByCategoryIdAndYear> {
+        const movements = await this.movementRepository
+            .createQueryBuilder('movement')
+            .leftJoinAndSelect('movement.recurrence', 'recurrence')
+            .leftJoinAndSelect('movement.originBankAccount', 'originBankAccount')
+            .leftJoinAndSelect('movement.destinationBankAccount', 'destinationBankAccount')
+            .where('movement.userId = :userId', { userId })
+            .andWhere('movement.categoryId = :categoryId', { categoryId })
+            .andWhere('EXTRACT(YEAR FROM movement.date) = :year', { year })
+            .getMany()
+
+        const category = await this.categoryRepository.findOneBy({
+            id: categoryId,
+        })
+
+        return {
+            category: category!.toDTO(),
             movements: movements.map((movement) => movement.toDTO()),
             total: movements.length,
         }

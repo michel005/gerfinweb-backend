@@ -10,6 +10,7 @@ import {
 import { CustomUserRequest } from '@/type/CustomUserRequest'
 import { AbstractPrivateController } from '@/feature/AbstractPrivateController'
 import { AmountByDayOfMonthYear } from '@/feature/movement/dto/AmountByDayOfMonthYear'
+import { ResponseGetByCategoryIdAndYear } from '@/feature/movement/dto/ResponseGetByCategoryIdAndYear'
 
 @ApiTags('Movement')
 @Controller('/movement')
@@ -136,6 +137,33 @@ export class MovementController extends AbstractPrivateController {
         return await this.movementService.getByMonthYear(req.user.id, month, year)
     }
 
+    @Get('/getAllByCategoryIdAndYear/:categoryId/:year')
+    @ApiParam({
+        name: 'year',
+        required: true,
+        type: Number,
+        description: 'Ano da movimentação',
+        example: new Date().getFullYear(),
+    })
+    @ApiParam({
+        name: 'categoryId',
+        required: true,
+        type: Number,
+        description: 'ID da categoria',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Retorna uma lista de movimentações da categoria e ano solicitado com sucesso',
+        type: ResponseGetByCategoryIdAndYear,
+    })
+    async getByCategoryIdAndYear(
+        @Request() req: CustomUserRequest,
+        @Param('categoryId') categoryId: string,
+        @Param('year') year: number
+    ): Promise<ResponseGetByCategoryIdAndYear> {
+        return await this.movementService.getAllByCategoryIdAndYear(req.user.id, categoryId, year)
+    }
+
     @Get('/getRecurrencyByMonthYear/:year/:month')
     @ApiParam({
         name: 'year',
@@ -170,7 +198,6 @@ export class MovementController extends AbstractPrivateController {
         required: true,
         type: Number,
         description: 'Ano da movimentação',
-        example: new Date().getFullYear(),
     })
     @ApiParam({
         name: 'month',
