@@ -182,6 +182,7 @@ export class RecurrenceService extends AbstractService {
                 parameters
             )
             .where('recurrence.userId = :userId', { userId })
+            .andWhere('movement.destinationBankAccount is null')
             .addSelect('MONTH(movement.date)', 'movementMonth')
             .addSelect('YEAR(movement.date)', 'movementYear')
             .addSelect('SUM(COALESCE(movement.value, 0))', 'totalAmount')
@@ -193,7 +194,7 @@ export class RecurrenceService extends AbstractService {
 
         const rawResults = await query.getRawAndEntities()
 
-        return rawResults.entities.map((recurrence) => {
+        const results =  rawResults.entities.map((recurrence) => {
             const totalsForThisRecurrence = rawResults.raw
                 .filter((r) => r.recurrence_id === recurrence.id && r.movementMonth !== null)
                 .map((r) => ({
@@ -220,6 +221,47 @@ export class RecurrenceService extends AbstractService {
                 monthlyBalances,
             }
         })
+
+        const queryOthers = this.movementRepository.createQueryBuilder('movement')
+        queryOthers
+            .where('movement.userId = :userId', { userId })
+            .andWhere('movement.destinationBankAccount is null')
+            .andWhere('movement.recurrenceId IS NULL')
+            .select('MONTH(movement.date)', 'movementMonth')
+            .addSelect('YEAR(movement.date)', 'movementYear')
+            .addSelect('SUM(COALESCE(movement.value, 0))', 'totalAmount')
+            .addSelect('COUNT(movement.id)', 'count')
+            .addSelect('SUM(case when movement.approved = false then 1 else 0 end)', 'countPendent')
+            .groupBy('movementMonth')
+            .addGroupBy('movementYear')
+        const rawResultsOthers = await queryOthers.getRawAndEntities()
+
+        const monthlyBalancesOthers = periods.map((p) => {
+            const totalsForThisRecurrence = rawResultsOthers.raw
+                .map((r) => ({
+                    month: parseInt(r.movementMonth),
+                    year: parseInt(r.movementYear),
+                    totalAmount: parseFloat(r.totalAmount || '0'),
+                    count: Number(r.count || '0'),
+                    countPendent: Number(r.countPendent || '0'),
+                }))
+            const found = totalsForThisRecurrence.find((t) => t.month === p.month && t.year === p.year)
+            return {
+                month: p.month,
+                year: p.year,
+                totalAmount: found ? found.totalAmount : 0,
+                count: found ? Number(found.count || '0') : 0,
+                countPendent: found ? Number(found.countPendent || '0') : 0,
+            }
+        })
+
+        results.push({
+            id: '-1',
+            description: 'Sem recorrências',
+            monthlyBalances: monthlyBalancesOthers,
+        } as any)
+
+        return results
     }
 
     async detail(userId: string, id: string): Promise<ResponseRecurrenceDTO> {

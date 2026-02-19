@@ -268,6 +268,7 @@ class MovementService extends AbstractService {
             .leftJoinAndSelect('movement.originBankAccount', 'originBankAccount')
             .leftJoinAndSelect('movement.destinationBankAccount', 'destinationBankAccount')
             .leftJoinAndSelect('movement.category', 'category')
+            .leftJoinAndSelect('movement.recurrence', 'recurrence')
             .where('movement.userId = :userId', { userId })
             .orderBy('movement.createdAt', 'DESC')
             .limit(limit)
@@ -283,6 +284,7 @@ class MovementService extends AbstractService {
             .leftJoinAndSelect('movement.originBankAccount', 'originBankAccount')
             .leftJoinAndSelect('movement.destinationBankAccount', 'destinationBankAccount')
             .leftJoinAndSelect('movement.category', 'category')
+            .leftJoinAndSelect('movement.recurrence', 'recurrence')
             .where(
                 'movement.userId = :userId AND MONTH(movement.date) = :month AND YEAR(movement.date) = :year AND movement.approved = false',
                 { userId, month, year }
