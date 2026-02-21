@@ -224,26 +224,30 @@ export class RecurrenceService extends AbstractService {
 
         const queryOthers = this.movementRepository.createQueryBuilder('movement')
         queryOthers
-            .where('movement.userId = :userId', { userId })
-            .andWhere('movement.destinationBankAccount is null')
-            .andWhere('movement.recurrenceId IS NULL')
-            .select('MONTH(movement.date)', 'movementMonth')
+            .select([])
+            .addSelect('MONTH(movement.date)', 'movementMonth')
             .addSelect('YEAR(movement.date)', 'movementYear')
             .addSelect('SUM(COALESCE(movement.value, 0))', 'totalAmount')
             .addSelect('COUNT(movement.id)', 'count')
             .addSelect('SUM(case when movement.approved = false then 1 else 0 end)', 'countPendent')
+            .addSelect('movement.approved', 'approved')
+            .where('movement.userId = :userId', { userId })
+            .andWhere('movement.destinationBankAccount is null')
+            .andWhere('movement.recurrenceId IS NULL')
             .groupBy('movementMonth')
             .addGroupBy('movementYear')
-        const rawResultsOthers = await queryOthers.getRawAndEntities()
+            .addGroupBy('movement.approved')
+        const rawResultsOthers = await queryOthers.getRawMany()
 
         const monthlyBalancesOthers = periods.map((p) => {
-            const totalsForThisRecurrence = rawResultsOthers.raw
+            const totalsForThisRecurrence = rawResultsOthers
                 .map((r) => ({
                     month: parseInt(r.movementMonth),
                     year: parseInt(r.movementYear),
                     totalAmount: parseFloat(r.totalAmount || '0'),
                     count: Number(r.count || '0'),
                     countPendent: Number(r.countPendent || '0'),
+                    approved: r.approved,
                 }))
             const found = totalsForThisRecurrence.find((t) => t.month === p.month && t.year === p.year)
             return {
@@ -252,13 +256,19 @@ export class RecurrenceService extends AbstractService {
                 totalAmount: found ? found.totalAmount : 0,
                 count: found ? Number(found.count || '0') : 0,
                 countPendent: found ? Number(found.countPendent || '0') : 0,
+                approved: found ? Boolean(found.approved) : false,
             }
         })
 
         results.push({
             id: '-1',
-            description: 'Sem recorrências',
-            monthlyBalances: monthlyBalancesOthers,
+            description: 'Sem recorrências (efetivadas)',
+            monthlyBalances: monthlyBalancesOthers.filter((x) => x.approved),
+        } as any)
+        results.push({
+            id: '-1',
+            description: 'Sem recorrências (pendentes)',
+            monthlyBalances: monthlyBalancesOthers.filter((x) => !x.approved),
         } as any)
 
         return results
@@ -302,7 +312,9 @@ export class RecurrenceService extends AbstractService {
             throw new BadRequestException('Recorrência não encontrada')
         }
         return {
-            date: new Date(year, month - 1, recurrence.day).toISOString().split('T')[0],
+            date: new Date(year, month - 1, Math.min(recurrence.day, new Date(year, month, 0).getDate()))
+                .toISOString()
+                .split('T')[0],
             description: recurrence.description,
             value: recurrence.value,
             category: recurrence.category ? recurrence.category.toDTO() : undefined,
